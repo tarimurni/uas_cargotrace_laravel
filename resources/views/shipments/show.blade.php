@@ -27,6 +27,10 @@
                         <svg class="w-4 h-4 me-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>
                         + Update Checkpoint
                     </button>
+                    <button type="button" onclick="document.getElementById('addExceptionModal').classList.remove('hidden')" class="inline-flex items-center px-3 py-2 bg-rose-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-rose-700">
+                        <svg class="w-4 h-4 me-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                        + Laporkan Exception
+                    </button>
                     <a href="{{ route('shipments.edit', $shipment) }}" class="inline-flex items-center px-3 py-2 bg-amber-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-amber-700">
                         <svg class="w-4 h-4 me-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                         Edit
@@ -87,29 +91,50 @@
                 </div>
             </div>
 
-            <!-- Delay Alert Banner -->
-            @if ($shipment->is_delayed)
-                <div class="bg-red-50 border-l-4 border-red-500 p-5 rounded-lg shadow-sm">
-                    <div class="flex items-start">
-                        <div class="flex-shrink-0">
-                            <svg class="h-6 w-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-                            </svg>
+            <!-- Deterministic Delay & ETA Rule Evaluation Banner -->
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-5 border-l-4 {{ $etaAnalysis['is_delayed'] || $shipment->is_delayed ? 'border-red-500 bg-red-50/40' : 'border-emerald-500 bg-emerald-50/40' }}">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div class="space-y-1">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-xs font-bold uppercase tracking-wider {{ $etaAnalysis['is_delayed'] || $shipment->is_delayed ? 'text-red-700' : 'text-emerald-700' }}">
+                                Analisis Deterministik ETA & Keterlambatan
+                            </span>
+                            @if ($etaAnalysis['severity'] !== 'NONE')
+                                <span class="px-2 py-0.5 rounded text-[11px] font-bold uppercase
+                                    @if($etaAnalysis['severity'] === 'HIGH') bg-red-600 text-white
+                                    @elseif($etaAnalysis['severity'] === 'MEDIUM') bg-orange-500 text-white
+                                    @else bg-yellow-400 text-yellow-900 @endif">
+                                    Severity: {{ $etaAnalysis['severity'] }}
+                                </span>
+                            @else
+                                <span class="px-2 py-0.5 rounded text-[11px] font-bold uppercase bg-emerald-600 text-white">
+                                    ON SCHEDULE
+                                </span>
+                            @endif
                         </div>
-                        <div class="ms-3">
-                            <h3 class="text-sm font-bold text-red-800">
-                                PERINGATAN KETERLAMBATAN (DELAY DETECTED)
-                            </h3>
-                            <div class="mt-1 text-sm text-red-700">
-                                Pengiriman ini teridentifikasi mengalami delay sekitar <span class="font-bold underline">{{ $shipment->delay_hours }} Jam</span> dari jadwal semula.
-                                @if($shipment->notes)
-                                    <p class="mt-1 italic font-medium">"{{ $shipment->notes }}"</p>
+
+                        <div class="text-sm {{ $etaAnalysis['is_delayed'] || $shipment->is_delayed ? 'text-red-900' : 'text-emerald-900' }}">
+                            @if ($etaAnalysis['delay_hours'] > 0)
+                                Terdeteksi selisih estimasi tiba <span class="font-bold underline">+{{ $etaAnalysis['delay_hours'] }} Jam</span>
+                                dibandingkan jadwal semula.
+                                @if($etaAnalysis['is_delayed'])
+                                    (Melebihi batas toleransi aturan sistem: <span class="font-semibold">{{ $etaAnalysis['threshold_hours'] }} Jam</span> &rarr; Status <span class="font-extrabold uppercase">DELAYED</span>)
+                                @else
+                                    (Masih dalam batas toleransi aturan sistem: <span class="font-semibold">{{ $etaAnalysis['threshold_hours'] }} Jam</span>)
                                 @endif
-                            </div>
+                            @else
+                                Pengiriman berjalan tepat waktu sesuai jadwal (Estimasi tiba: {{ $shipment->estimated_arrival?->format('d M Y, H:i') }}).
+                            @endif
                         </div>
                     </div>
+
+                    <div class="text-xs text-gray-500 bg-white px-3 py-2 rounded-lg border shadow-xs space-y-0.5">
+                        <div>Aturan Threshold: <span class="font-semibold text-gray-800">{{ $etaAnalysis['threshold_hours'] }} Jam</span></div>
+                        <div>Jadwal Asli: <span class="font-mono text-gray-800">{{ $shipment->expected_arrival?->format('d/m/Y H:i') }}</span></div>
+                        <div>Estimasi ETA: <span class="font-mono text-gray-800">{{ $shipment->estimated_arrival?->format('d/m/Y H:i') }}</span></div>
+                    </div>
                 </div>
-            @endif
+            </div>
 
             <!-- Route & Schedule Cards -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -188,6 +213,82 @@
                         <span class="text-xs text-gray-500">Layanan Carrier</span>
                         <div class="text-base font-semibold text-gray-900 capitalize mt-0.5">{{ $shipment->carrier?->service_type }} Freight</div>
                     </div>
+                </div>
+            </div>
+
+            <!-- Shipment Exceptions Management Section -->
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 space-y-4">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b pb-3">
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-900 flex items-center">
+                            <svg class="w-5 h-5 text-rose-600 me-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                            Manajemen Exception & Kendala Operasional
+                        </h3>
+                        <p class="text-xs text-gray-500">Pencatatan insiden cuaca, kepabeanan, kerusakan barang, atau antrean pelabuhan.</p>
+                    </div>
+
+                    @can('update', $shipment)
+                        <button type="button" onclick="document.getElementById('addExceptionModal').classList.remove('hidden')" class="inline-flex items-center px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-md text-xs font-semibold">
+                            + Catat Exception Baru
+                        </button>
+                    @endcan
+                </div>
+
+                <div class="space-y-3">
+                    @forelse ($shipment->exceptions as $exc)
+                        <div class="p-4 rounded-xl border {{ $exc->is_resolved ? 'bg-gray-50/80 border-gray-200' : 'bg-rose-50/60 border-rose-200' }} shadow-xs">
+                            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <span class="font-mono font-bold text-xs px-2.5 py-0.5 rounded
+                                        @if($exc->status === 'OPEN') bg-rose-600 text-white
+                                        @elseif($exc->status === 'INVESTIGATING') bg-amber-500 text-white
+                                        @else bg-emerald-600 text-white @endif">
+                                        {{ $exc->status ?? ($exc->is_resolved ? 'RESOLVED' : 'OPEN') }}
+                                    </span>
+
+                                    <span class="font-bold text-sm text-gray-900">
+                                        {{ str_replace('_', ' ', $exc->exception_type) }}
+                                    </span>
+
+                                    <span class="px-2 py-0.5 rounded text-[11px] font-semibold uppercase
+                                        @if($exc->severity === 'CRITICAL') bg-red-100 text-red-800 border border-red-300
+                                        @elseif($exc->severity === 'HIGH') bg-orange-100 text-orange-800 border border-orange-300
+                                        @else bg-yellow-100 text-yellow-800 border border-yellow-300 @endif">
+                                        Severity: {{ $exc->severity }}
+                                    </span>
+                                </div>
+
+                                <div class="text-xs text-gray-500 font-mono">
+                                    Terdeteksi: {{ ($exc->detected_at ?? $exc->occurred_at)?->format('d M Y, H:i') }}
+                                    @if($exc->resolved_at)
+                                        &bull; <span class="text-emerald-700 font-semibold">Selesai: {{ $exc->resolved_at->format('d M Y, H:i') }}</span>
+                                    @endif
+                                </div>
+                            </div>
+
+                            <p class="text-xs text-gray-700 mt-2 leading-relaxed">{{ $exc->description }}</p>
+
+                            @if($exc->resolution_notes)
+                                <div class="mt-2 p-2.5 bg-white rounded border border-gray-200 text-xs text-gray-700">
+                                    <span class="font-semibold text-emerald-800 block mb-0.5">Catatan Penanganan / Resolusi:</span>
+                                    {{ $exc->resolution_notes }}
+                                </div>
+                            @endif
+
+                            @can('update', $shipment)
+                                <div class="mt-3 pt-2 border-t border-gray-200/80 flex justify-end">
+                                    <button type="button" onclick="openEditExceptionModal({{ $exc->id }}, '{{ $exc->status }}', '{{ $exc->severity }}', `{{ addslashes($exc->resolution_notes ?? '') }}`)" class="text-xs text-indigo-600 hover:text-indigo-900 font-semibold inline-flex items-center">
+                                        <svg class="w-3.5 h-3.5 me-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                                        Update Status / Resolusi Exception
+                                    </button>
+                                </div>
+                            @endcan
+                        </div>
+                    @empty
+                        <div class="text-center py-6 text-gray-400">
+                            <p class="text-xs text-gray-500">Belum ada kendala operasional yang dicatat.</p>
+                        </div>
+                    @endforelse
                 </div>
             </div>
 
@@ -362,7 +463,7 @@
         </div>
     </div>
 
-    <!-- Add Checkpoint Modal (For Logistics Operator & Admin) -->
+    <!-- Add Checkpoint Modal -->
     @can('update', $shipment)
         <div id="addCheckpointModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-gray-900/60 backdrop-blur-sm flex items-center justify-center p-4">
             <div class="bg-white rounded-xl shadow-xl max-w-lg w-full p-6 space-y-4">
@@ -397,7 +498,6 @@
                                 <option value="{{ $loc->id }}">{{ $loc->name }} ({{ $loc->city }})</option>
                             @endforeach
                         </select>
-                        <span class="text-[11px] text-gray-400">Koordinat GPS akan otomatis terisi dari master lokasi jika tidak diisi manual.</span>
                     </div>
 
                     <div class="grid grid-cols-2 gap-3">
@@ -438,5 +538,135 @@
                 </form>
             </div>
         </div>
+
+        <!-- Add Exception Modal -->
+        <div id="addExceptionModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-gray-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+            <div class="bg-white rounded-xl shadow-xl max-w-lg w-full p-6 space-y-4">
+                <div class="flex justify-between items-center border-b pb-3">
+                    <h3 class="text-lg font-bold text-gray-900">Catat Exception / Kendala Kargo</h3>
+                    <button type="button" onclick="document.getElementById('addExceptionModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+
+                <form method="POST" action="{{ route('shipments.exceptions.store', $shipment) }}" class="space-y-4">
+                    @csrf
+
+                    <div>
+                        <label for="exception_type" class="block text-xs font-semibold text-gray-700 uppercase">Jenis Exception *</label>
+                        <select name="exception_type" id="exception_type" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-rose-500 focus:ring-rose-500 sm:text-sm">
+                            <option value="CUSTOMS_HOLD">CUSTOMS_HOLD (Pemeriksaan / Tertahan Bea Cukai)</option>
+                            <option value="WEATHER_DELAY">WEATHER_DELAY (Cuaca Buruk / Gelombang Laut)</option>
+                            <option value="PORT_CONGESTION">PORT_CONGESTION (Antrean Dermaga / Kepadatan Pelabuhan)</option>
+                            <option value="DAMAGED">DAMAGED (Kerusakan Fisik Kargo / Kontainer)</option>
+                            <option value="MISROUTED">MISROUTED (Kesalahan Rute / Salah Bongkar)</option>
+                            <option value="DOCUMENTATION_ISSUE">DOCUMENTATION_ISSUE (Kendala Dokumen / Izin Ekspor)</option>
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label for="severity" class="block text-xs font-semibold text-gray-700 uppercase">Severity *</label>
+                            <select name="severity" id="severity" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm">
+                                <option value="LOW">LOW</option>
+                                <option value="MEDIUM" selected>MEDIUM</option>
+                                <option value="HIGH">HIGH</option>
+                                <option value="CRITICAL">CRITICAL</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="status" class="block text-xs font-semibold text-gray-700 uppercase">Status Awal *</label>
+                            <select name="status" id="status" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm">
+                                <option value="OPEN" selected>OPEN (Baru Terdeteksi)</option>
+                                <option value="INVESTIGATING">INVESTIGATING (Sedang Diinvestigasi)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="detected_at" class="block text-xs font-semibold text-gray-700 uppercase">Waktu Terdeteksi</label>
+                        <input type="datetime-local" name="detected_at" id="detected_at" value="{{ date('Y-m-d\TH:i') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm">
+                    </div>
+
+                    <div>
+                        <label for="description" class="block text-xs font-semibold text-gray-700 uppercase">Deskripsi Kendala *</label>
+                        <textarea name="description" id="description" rows="3" required placeholder="Jelaskan secara detail kendala yang terjadi..." class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm"></textarea>
+                    </div>
+
+                    <div class="flex justify-end space-x-2 pt-3 border-t">
+                        <button type="button" onclick="document.getElementById('addExceptionModal').classList.add('hidden')" class="px-4 py-2 border rounded-md text-xs font-semibold text-gray-700 hover:bg-gray-50">
+                            Batal
+                        </button>
+                        <button type="submit" class="px-4 py-2 bg-rose-600 text-white rounded-md text-xs font-semibold uppercase hover:bg-rose-700">
+                            Simpan Exception
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Edit / Resolve Exception Modal -->
+        <div id="editExceptionModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-gray-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+            <div class="bg-white rounded-xl shadow-xl max-w-lg w-full p-6 space-y-4">
+                <div class="flex justify-between items-center border-b pb-3">
+                    <h3 class="text-lg font-bold text-gray-900">Update Status / Resolusi Exception</h3>
+                    <button type="button" onclick="document.getElementById('editExceptionModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+
+                <form id="editExceptionForm" method="POST" action="" class="space-y-4">
+                    @csrf
+                    @method('PUT')
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label for="modal_edit_status" class="block text-xs font-semibold text-gray-700 uppercase">Status *</label>
+                            <select name="status" id="modal_edit_status" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm">
+                                <option value="OPEN">OPEN</option>
+                                <option value="INVESTIGATING">INVESTIGATING</option>
+                                <option value="RESOLVED">RESOLVED (Terselesaikan)</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="modal_edit_severity" class="block text-xs font-semibold text-gray-700 uppercase">Severity</label>
+                            <select name="severity" id="modal_edit_severity" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm">
+                                <option value="LOW">LOW</option>
+                                <option value="MEDIUM">MEDIUM</option>
+                                <option value="HIGH">HIGH</option>
+                                <option value="CRITICAL">CRITICAL</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="modal_edit_resolution_notes" class="block text-xs font-semibold text-gray-700 uppercase">Catatan Penanganan / Solusi</label>
+                        <textarea name="resolution_notes" id="modal_edit_resolution_notes" rows="3" placeholder="Jelaskan tindakan koreksi yang telah dilakukan..." class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm"></textarea>
+                    </div>
+
+                    <div class="flex justify-end space-x-2 pt-3 border-t">
+                        <button type="button" onclick="document.getElementById('editExceptionModal').classList.add('hidden')" class="px-4 py-2 border rounded-md text-xs font-semibold text-gray-700 hover:bg-gray-50">
+                            Batal
+                        </button>
+                        <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-md text-xs font-semibold uppercase hover:bg-indigo-700">
+                            Perbarui Status
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <script>
+            function openEditExceptionModal(id, status, severity, notes) {
+                const form = document.getElementById('editExceptionForm');
+                form.action = '/shipment-exceptions/' + id;
+                document.getElementById('modal_edit_status').value = status;
+                document.getElementById('modal_edit_severity').value = severity;
+                document.getElementById('modal_edit_resolution_notes').value = notes || '';
+                document.getElementById('editExceptionModal').classList.remove('hidden');
+            }
+        </script>
     @endcan
 </x-app-layout>

@@ -11,6 +11,14 @@ use Illuminate\Support\Facades\DB;
 
 class ShipmentService
 {
+    protected EtaService $etaService;
+
+    public function __construct(
+        ?EtaService $etaService = null
+    ) {
+        $this->etaService = $etaService ?? new EtaService();
+    }
+
     public const STATUS_CREATED = 'CREATED';
     public const STATUS_BOOKED = 'BOOKED';
     public const STATUS_PICKED_UP = 'PICKED_UP';
@@ -182,6 +190,8 @@ class ShipmentService
                 'user_agent' => request()?->userAgent(),
             ]);
 
+            $this->etaService->evaluateAndApply($shipment, $user);
+
             return $shipment->fresh(['items', 'origin', 'destination', 'carrier', 'customer']);
         });
     }
@@ -247,6 +257,8 @@ class ShipmentService
                 'ip_address' => request()?->ip() ?? '127.0.0.1',
                 'user_agent' => request()?->userAgent(),
             ]);
+
+            $this->etaService->evaluateAndApply($shipment, $user);
 
             return $shipment->fresh(['items', 'origin', 'destination', 'carrier', 'customer']);
         });

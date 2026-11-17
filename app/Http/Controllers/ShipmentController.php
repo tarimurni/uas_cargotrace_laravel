@@ -9,6 +9,7 @@ use App\Models\Carrier;
 use App\Models\Location;
 use App\Models\Shipment;
 use App\Models\User;
+use App\Services\EtaService;
 use App\Services\ShipmentService;
 use App\Services\TrackingService;
 use Illuminate\Http\RedirectResponse;
@@ -102,7 +103,7 @@ class ShipmentController extends Controller
     /**
      * Display the specified resource with historical tracking timeline and latest coordinates.
      */
-    public function show(Shipment $shipment): View
+    public function show(Shipment $shipment, EtaService $etaService): View
     {
         $this->authorize('view', $shipment);
 
@@ -120,8 +121,9 @@ class ShipmentController extends Controller
         $timeline = $this->trackingService->getCombinedTimeline($shipment);
         $latestEvent = $shipment->trackingEvents->last();
         $locations = Location::orderBy('name')->get();
+        $etaAnalysis = $etaService->analyzeShipment($shipment);
 
-        return view('shipments.show', compact('shipment', 'timeline', 'latestEvent', 'locations'));
+        return view('shipments.show', compact('shipment', 'timeline', 'latestEvent', 'locations', 'etaAnalysis'));
     }
 
     /**

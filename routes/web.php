@@ -6,6 +6,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ShipmentController;
+use App\Http\Controllers\ShipmentExceptionController;
 use App\Http\Controllers\TrackingEventController;
 use Illuminate\Support\Facades\Route;
 
@@ -26,6 +27,10 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('shipments', ShipmentController::class);
     Route::post('/shipments/{shipment}/tracking-events', [TrackingEventController::class, 'store'])
         ->name('shipments.tracking-events.store');
+    Route::post('/shipments/{shipment}/exceptions', [ShipmentExceptionController::class, 'store'])
+        ->name('shipments.exceptions.store');
+    Route::put('/shipment-exceptions/{exception}', [ShipmentExceptionController::class, 'update'])
+        ->name('shipment-exceptions.update');
 
     // Admin-only management
     Route::middleware('role:admin')->group(function () {
