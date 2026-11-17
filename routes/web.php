@@ -6,6 +6,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ShipmentController;
+use App\Http\Controllers\TrackingEventController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -23,6 +24,8 @@ Route::middleware(['auth'])->group(function () {
 
     // Shipments (Accessible by Admin, Operator, Customer; scoped by Policy)
     Route::resource('shipments', ShipmentController::class);
+    Route::post('/shipments/{shipment}/tracking-events', [TrackingEventController::class, 'store'])
+        ->name('shipments.tracking-events.store');
 
     // Admin-only management
     Route::middleware('role:admin')->group(function () {

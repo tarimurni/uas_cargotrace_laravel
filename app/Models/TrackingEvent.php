@@ -13,6 +13,8 @@ class TrackingEvent extends Model
     protected $fillable = [
         'shipment_id',
         'location_id',
+        'latitude',
+        'longitude',
         'status',
         'event_time',
         'description',
@@ -22,6 +24,8 @@ class TrackingEvent extends Model
     protected function casts(): array
     {
         return [
+            'latitude' => 'decimal:7',
+            'longitude' => 'decimal:7',
             'event_time' => 'datetime',
         ];
     }
