@@ -1,0 +1,423 @@
+{
+  "info": {
+    "_postman_id": "cargotrace-rest-api-collection",
+    "name": "CargoTrace REST API",
+    "description": "Dokumentasi REST API lengkap CargoTrace Logistics Management System dengan Laravel Sanctum Token Authentication dan Role-Based Access Control (Admin, Operator, Customer).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:8000/api",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Authentication",
+      "item": [
+        {
+          "name": "Register User",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Budi Santoso\",\n  \"email\": \"budi.santoso@example.com\",\n  \"password\": \"password123\",\n  \"password_confirmation\": \"password123\",\n  \"role\": \"customer\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["register"]
+            },
+            "description": "Mendaftarkan user baru ke sistem dan mengembalikan token Sanctum."
+          }
+        },
+        {
+          "name": "Login Admin",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@cargotrace.com\",\n  \"password\": \"password\",\n  \"device_name\": \"Postman-Admin\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["login"]
+            },
+            "description": "Autentikasi akun Admin CargoTrace."
+          }
+        },
+        {
+          "name": "Login Operator",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"operator@cargotrace.com\",\n  \"password\": \"password\",\n  \"device_name\": \"Postman-Operator\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["login"]
+            },
+            "description": "Autentikasi akun Logistics Operator."
+          }
+        },
+        {
+          "name": "Login Customer",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"customer@cargotrace.com\",\n  \"password\": \"password\",\n  \"device_name\": \"Postman-Customer\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["login"]
+            },
+            "description": "Autentikasi akun Customer."
+          }
+        },
+        {
+          "name": "Get Authenticated User",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/user",
+              "host": ["{{baseUrl}}"],
+              "path": ["user"]
+            },
+            "description": "Mendapatkan data user yang sedang login."
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["logout"]
+            },
+            "description": "Mencabut personal access token yang sedang aktif."
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Shipments",
+      "item": [
+        {
+          "name": "List Shipments (Paginated)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/shipments?page=1&per_page=15&current_status=IN_TRANSIT",
+              "host": ["{{baseUrl}}"],
+              "path": ["shipments"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "per_page", "value": "15" },
+                { "key": "current_status", "value": "IN_TRANSIT" }
+              ]
+            },
+            "description": "Mengambil daftar pengiriman dengan pagination server-side dan filtering status/carrier/delay."
+          }
+        },
+        {
+          "name": "Create Shipment with Items",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customer_id\": 3,\n  \"carrier_id\": 1,\n  \"origin_id\": 1,\n  \"destination_id\": 2,\n  \"cargo_type\": \"Komponen Elektronik\",\n  \"weight\": 1250.50,\n  \"volume\": 8.50,\n  \"expected_departure\": \"2026-11-20 08:00:00\",\n  \"expected_arrival\": \"2026-11-24 17:00:00\",\n  \"estimated_arrival\": \"2026-11-24 17:00:00\",\n  \"notes\": \"Pengiriman prioritas kargo laut via Tanjung Priok\",\n  \"items\": [\n    {\n      \"item_name\": \"Microcontroller Board STM32\",\n      \"item_code\": \"STM-001\",\n      \"quantity\": 500,\n      \"weight\": 250.00,\n      \"volume\": 1.50,\n      \"declared_value\": 15000000\n    },\n    {\n      \"item_name\": \"Power Distribution Module\",\n      \"item_code\": \"PDM-002\",\n      \"quantity\": 200,\n      \"weight\": 1000.50,\n      \"volume\": 7.00,\n      \"declared_value\": 35000000\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/shipments",
+              "host": ["{{baseUrl}}"],
+              "path": ["shipments"]
+            },
+            "description": "Membuat order shipment baru beserta item manifest (Operator / Admin)."
+          }
+        },
+        {
+          "name": "Get Shipment Detail",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/shipments/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["shipments", "1"]
+            },
+            "description": "Mengambil detail lengkap kargo termasuk relasi origin, destination, carrier, customer, items, dan timeline."
+          }
+        },
+        {
+          "name": "Update Shipment (PUT)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cargo_type\": \"Komponen Elektronik & Komputer\",\n  \"weight\": 1300.00,\n  \"expected_departure\": \"2026-11-20 08:00:00\",\n  \"expected_arrival\": \"2026-11-25 10:00:00\",\n  \"estimated_arrival\": \"2026-11-25 10:00:00\",\n  \"current_status\": \"BOOKED\",\n  \"notes\": \"Jadwal keberangkatan diperbarui\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/shipments/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["shipments", "1"]
+            },
+            "description": "Memperbarui data pengiriman dan transisi status shipment."
+          }
+        },
+        {
+          "name": "Delete Shipment",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/shipments/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["shipments", "1"]
+            },
+            "description": "Menghapus shipment dari sistem (Hanya Admin)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Tracking Events",
+      "item": [
+        {
+          "name": "Get Shipment Tracking History",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/shipments/1/tracking?page=1&per_page=15",
+              "host": ["{{baseUrl}}"],
+              "path": ["shipments", "1", "tracking"]
+            },
+            "description": "Melihat riwayat titik lacak checkpoint kronologis shipment."
+          }
+        },
+        {
+          "name": "Record Tracking Checkpoint",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"IN_TRANSIT\",\n  \"location_id\": 1,\n  \"latitude\": -6.1038,\n  \"longitude\": 106.8824,\n  \"description\": \"Kapal telah bertolak dari Pelabuhan Tanjung Priok menuju Selat Malaka.\",\n  \"event_time\": \"2026-11-20 14:30:00\",\n  \"update_shipment_status\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/shipments/1/tracking",
+              "host": ["{{baseUrl}}"],
+              "path": ["shipments", "1", "tracking"]
+            },
+            "description": "Menambahkan event checkpoint baru pada pelacakan shipment."
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Master Data (Carriers & Locations)",
+      "item": [
+        {
+          "name": "List Carriers",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/carriers?page=1&per_page=15",
+              "host": ["{{baseUrl}}"],
+              "path": ["carriers"]
+            },
+            "description": "Mengambil master data carriers (Admin / Operator)."
+          }
+        },
+        {
+          "name": "Create Carrier",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"MSC_EXP\",\n  \"name\": \"Mediterranean Shipping Company\",\n  \"service_type\": \"sea\",\n  \"contact_email\": \"support@msc.com\",\n  \"contact_phone\": \"+6221-555-1234\",\n  \"is_active\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/carriers",
+              "host": ["{{baseUrl}}"],
+              "path": ["carriers"]
+            },
+            "description": "Menambahkan carrier baru (Admin Only)."
+          }
+        },
+        {
+          "name": "List Locations",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/locations?page=1&per_page=15",
+              "host": ["{{baseUrl}}"],
+              "path": ["locations"]
+            },
+            "description": "Mengambil daftar master lokasi / pelabuhan / bandara."
+          }
+        },
+        {
+          "name": "Create Location",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"MY_PKG\",\n  \"name\": \"Port Klang\",\n  \"type\": \"seaport\",\n  \"city\": \"Klang\",\n  \"country\": \"Malaysia\",\n  \"latitude\": 2.9999,\n  \"longitude\": 101.3928\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/locations",
+              "host": ["{{baseUrl}}"],
+              "path": ["locations"]
+            },
+            "description": "Menambahkan lokasi / simpul logistik baru (Admin Only)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Shipment Exceptions",
+      "item": [
+        {
+          "name": "List Shipment Exceptions",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/shipments/1/exceptions?page=1&per_page=15",
+              "host": ["{{baseUrl}}"],
+              "path": ["shipments", "1", "exceptions"]
+            },
+            "description": "Mengambil daftar exception atau kendala logistik pada shipment."
+          }
+        },
+        {
+          "name": "Report Shipment Exception",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"exception_type\": \"WEATHER_DELAY\",\n  \"severity\": \"HIGH\",\n  \"description\": \"Gelombang tinggi di Selat Sunda mengharuskan kapal menurunkan kecepatan dan menunggu pandu.\",\n  \"status\": \"OPEN\",\n  \"detected_at\": \"2026-11-20 18:00:00\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/shipments/1/exceptions",
+              "host": ["{{baseUrl}}"],
+              "path": ["shipments", "1", "exceptions"]
+            },
+            "description": "Melaporkan kendala kargo baru (Operator / Admin)."
+          }
+        },
+        {
+          "name": "Update / Resolve Exception",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"RESOLVED\",\n  \"severity\": \"MEDIUM\",\n  \"description\": \"Kondisi cuaca membaik dan kapal telah melanjutkan perjalanan normal.\",\n  \"resolution_notes\": \"Izin berlayar diberikan otoritas pelabuhan setelah evaluasi BMKG.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/exceptions/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["exceptions", "1"]
+            },
+            "description": "Memperbarui status penanganan exception hingga tuntas/RESOLVED."
+          }
+        }
+      ]
+    }
+  ]
+}
