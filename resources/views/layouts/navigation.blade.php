@@ -15,11 +15,37 @@
                     <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                         {{ __('Dashboard') }}
                     </x-nav-link>
+
+                    <x-nav-link :href="route('shipments.index')" :active="request()->routeIs('shipments.*')">
+                        {{ __('Shipments') }}
+                    </x-nav-link>
+
+                    @if (Auth::user()->isAdmin())
+                        <x-nav-link :href="route('carriers.index')" :active="request()->routeIs('carriers.*')">
+                            {{ __('Carriers') }}
+                        </x-nav-link>
+
+                        <x-nav-link :href="route('locations.index')" :active="request()->routeIs('locations.*')">
+                            {{ __('Locations') }}
+                        </x-nav-link>
+
+                        <x-nav-link :href="route('audit-logs.index')" :active="request()->routeIs('audit-logs.*')">
+                            {{ __('Audit Logs') }}
+                        </x-nav-link>
+                    @endif
                 </div>
             </div>
 
             <!-- Settings Dropdown -->
             <div class="hidden sm:flex sm:items-center sm:ms-6">
+                <!-- Role Badge -->
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold me-3 uppercase
+                    @if(Auth::user()->role === 'admin') bg-purple-100 text-purple-800 border border-purple-200
+                    @elseif(Auth::user()->role === 'operator') bg-blue-100 text-blue-800 border border-blue-200
+                    @else bg-green-100 text-green-800 border border-green-200 @endif">
+                    {{ Auth::user()->role }}
+                </span>
+
                 <x-dropdown align="right" width="48">
                     <x-slot name="trigger">
                         <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
@@ -70,6 +96,24 @@
             <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                 {{ __('Dashboard') }}
             </x-responsive-nav-link>
+
+            <x-responsive-nav-link :href="route('shipments.index')" :active="request()->routeIs('shipments.*')">
+                {{ __('Shipments') }}
+            </x-responsive-nav-link>
+
+            @if (Auth::user()->isAdmin())
+                <x-responsive-nav-link :href="route('carriers.index')" :active="request()->routeIs('carriers.*')">
+                    {{ __('Carriers') }}
+                </x-responsive-nav-link>
+
+                <x-responsive-nav-link :href="route('locations.index')" :active="request()->routeIs('locations.*')">
+                    {{ __('Locations') }}
+                </x-responsive-nav-link>
+
+                <x-responsive-nav-link :href="route('audit-logs.index')" :active="request()->routeIs('audit-logs.*')">
+                    {{ __('Audit Logs') }}
+                </x-responsive-nav-link>
+            @endif
         </div>
 
         <!-- Responsive Settings Options -->
