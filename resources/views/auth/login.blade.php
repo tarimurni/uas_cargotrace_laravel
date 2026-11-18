@@ -51,7 +51,7 @@
                         </div>
                         <div>
                             <h4 class="text-sm font-bold text-white">Visualisasi Satelit & Leaflet GIS</h4>
-                            <p class="text-xs text-slate-300 mt-0.5">Peta jalan CartoDB Voyager dan citra satelit nyata Esri World Imagery dengan koordinat waypoint presisi.</p>
+                            <p class="text-xs text-slate-300 mt-0.5">Peta jalan OpenStreetMap dan citra satelit nyata Esri World Imagery dengan koordinat waypoint presisi.</p>
                         </div>
                     </div>
 

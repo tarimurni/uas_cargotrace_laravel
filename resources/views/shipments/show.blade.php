@@ -867,32 +867,24 @@
                     maxZoom: 19
                 }).setView(defaultCenter, 6);
 
-                // Tile Layer 1: CartoDB Voyager (High-def sharp navigation map)
-                const voyagerLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-                    maxZoom: 19,
-                    subdomains: 'abcd',
-                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>'
-                });
-
-                // Tile Layer 2: OpenStreetMap Standard
-                const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                // Tile Layer 1: OpenStreetMap Standard (Layer utama gratis tanpa API key)
+                const osmLayer = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     maxZoom: 19,
                     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors'
                 });
 
-                // Tile Layer 3: Esri World Imagery (Realistic satellite view)
+                // Tile Layer 2: Esri World Imagery (Realistic satellite view)
                 const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
                     maxZoom: 19,
                     attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
                 });
 
-                // Default layer: CartoDB Voyager
-                voyagerLayer.addTo(map);
+                // Default layer: OpenStreetMap
+                osmLayer.addTo(map);
 
                 // Base layer switcher
                 const baseMaps = {
-                    "Peta Navigasi (Voyager)": voyagerLayer,
-                    "OpenStreetMap Standar": osmLayer,
+                    "OpenStreetMap (Peta Jalan)": osmLayer,
                     "Citra Satelit (Esri World Imagery)": satelliteLayer
                 };
                 L.control.layers(baseMaps, null, { position: 'topright' }).addTo(map);
