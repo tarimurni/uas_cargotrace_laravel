@@ -35,4 +35,17 @@ return [
         ],
     ],
 
+    'open_meteo' => [
+        'url' => env('OPEN_METEO_URL', 'https://api.open-meteo.com/v1/forecast'),
+        'timeout' => (int) env('OPEN_METEO_TIMEOUT', 3),
+        'api_key' => env('OPEN_METEO_API_KEY', null),
+    ],
+
+    'nominatim' => [
+        'url' => env('NOMINATIM_URL', 'https://nominatim.openstreetmap.org'),
+        'timeout' => (int) env('NOMINATIM_TIMEOUT', 3),
+        'user_agent' => env('NOMINATIM_USER_AGENT', 'CargoTrace-Logistics/1.0 (contact@cargotrace.com)'),
+        'api_key' => env('NOMINATIM_API_KEY', null),
+    ],
+
 ];

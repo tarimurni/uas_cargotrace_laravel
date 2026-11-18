@@ -136,6 +136,154 @@
                 </div>
             </div>
 
+            <!-- Interactive Route & Tracking Map (Leaflet.js + OpenStreetMap) -->
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 border border-gray-100">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-4 mb-4 border-b border-gray-100">
+                    <div>
+                        <div class="flex items-center space-x-2">
+                            <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                            </svg>
+                            <h3 class="text-base font-bold text-gray-900">
+                                Visualisasi Peta Rute & Titik Pelacakan Interaktif
+                            </h3>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1">
+                            Memetakan titik keberangkatan, titik tujuan, checkpoint pelacakan real-time, serta proyeksi garis rute navigasi.
+                        </p>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <button type="button" onclick="window.resetShipmentMap && window.resetShipmentMap()" class="inline-flex items-center px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-md transition shadow-xs">
+                            <svg class="w-3.5 h-3.5 me-1 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>
+                            Fokus Peta
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Leaflet Map Container -->
+                <div class="relative">
+                    <div id="shipmentMap" class="w-full h-[450px] rounded-xl border border-gray-200 z-0 shadow-inner bg-slate-50"></div>
+                </div>
+
+                <!-- Map Legend & Attribution -->
+                <div class="mt-4 pt-3 border-t border-gray-100 flex flex-wrap items-center justify-between gap-3 text-xs text-gray-600">
+                    <div class="flex flex-wrap items-center gap-4">
+                        <span class="inline-flex items-center">
+                            <span class="w-3 h-3 rounded-full bg-emerald-600 ring-2 ring-emerald-200 me-1.5 inline-block"></span>
+                            <strong>Asal:</strong>&nbsp;{{ $shipment->origin?->name }}
+                        </span>
+                        <span class="inline-flex items-center">
+                            <span class="w-3 h-3 rounded-full bg-blue-600 ring-2 ring-blue-200 me-1.5 inline-block"></span>
+                            <strong>Checkpoint:</strong>&nbsp;{{ count($checkpointsData) }} Titik Tercatat
+                        </span>
+                        <span class="inline-flex items-center">
+                            <span class="w-3 h-3 rounded-full bg-red-600 ring-2 ring-red-200 me-1.5 inline-block"></span>
+                            <strong>Tujuan:</strong>&nbsp;{{ $shipment->destination?->name }}
+                        </span>
+                        <span class="inline-flex items-center">
+                            <span class="w-4 h-0.5 bg-blue-600 me-1.5 inline-block"></span>
+                            <span>Rute Terlaksana</span>
+                        </span>
+                        <span class="inline-flex items-center">
+                            <span class="w-4 h-0.5 border-t-2 border-purple-600 border-dashed me-1.5 inline-block"></span>
+                            <span>Proyeksi Rute</span>
+                        </span>
+                    </div>
+
+                    <div class="text-[11px] text-gray-500">
+                        Peta: &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener" class="text-indigo-600 hover:underline">OpenStreetMap</a> contributors via Leaflet.js
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live Weather & Environmental Conditions (Open-Meteo API) -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Destination Weather Card -->
+                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-5 border border-gray-100">
+                    <div class="flex justify-between items-start mb-3">
+                        <div>
+                            <span class="text-xs font-bold text-indigo-600 uppercase tracking-wider">Kondisi Cuaca Pelabuhan Tujuan</span>
+                            <h4 class="font-bold text-gray-900 text-sm mt-0.5">{{ $shipment->destination?->name }}</h4>
+                            <p class="text-xs text-gray-500">{{ $shipment->destination?->city }}, {{ $shipment->destination?->country }}</p>
+                        </div>
+                        <span class="px-2 py-0.5 text-[10px] font-bold rounded-full uppercase
+                            {{ !empty($destinationWeather['success']) ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-gray-100 text-gray-600' }}">
+                            {{ !empty($destinationWeather['success']) ? 'Live Open-Meteo' : 'Offline / Fallback' }}
+                        </span>
+                    </div>
+
+                    @if(!empty($destinationWeather['success']))
+                        <div class="flex items-center justify-between p-3.5 bg-gradient-to-r from-blue-50/60 to-indigo-50/40 rounded-xl border border-blue-100/80">
+                            <div class="flex items-center space-x-3">
+                                <span class="text-3xl">{{ $destinationWeather['icon'] ?? '🌤️' }}</span>
+                                <div>
+                                    <div class="text-2xl font-extrabold text-gray-900 font-mono">
+                                        {{ $destinationWeather['temperature'] ?? '-' }}°C
+                                    </div>
+                                    <p class="text-xs font-semibold text-gray-700">{{ $destinationWeather['condition'] ?? 'Normal' }}</p>
+                                </div>
+                            </div>
+
+                            <div class="text-right text-xs text-gray-600 space-y-1">
+                                <div>Kelembaban: <span class="font-semibold text-gray-900">{{ $destinationWeather['humidity'] ?? '-' }}%</span></div>
+                                <div>Kecepatan Angin: <span class="font-semibold text-gray-900">{{ $destinationWeather['wind_speed'] ?? '-' }} km/h</span></div>
+                                @if(!empty($destinationWeather['apparent_temperature']))
+                                    <div class="text-[11px] text-gray-500">Terasa Seperti: {{ $destinationWeather['apparent_temperature'] }}°C</div>
+                                @endif
+                            </div>
+                        </div>
+                    @else
+                        <div class="p-3.5 bg-gray-50 rounded-xl border border-gray-200 text-xs text-gray-600 flex items-center space-x-2.5">
+                            <svg class="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                            <span>{{ $destinationWeather['error'] ?? 'Informasi cuaca tujuan saat ini tidak tersedia (Fallback aman).' }}</span>
+                        </div>
+                    @endif
+                </div>
+
+                <!-- Current / Origin Weather Card -->
+                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-5 border border-gray-100">
+                    <div class="flex justify-between items-start mb-3">
+                        <div>
+                            <span class="text-xs font-bold text-emerald-600 uppercase tracking-wider">Kondisi Cuaca Posisi Terkini / Asal</span>
+                            <h4 class="font-bold text-gray-900 text-sm mt-0.5">{{ $currentLoc?->name ?? 'Posisi Terakhir' }}</h4>
+                            <p class="text-xs text-gray-500">{{ $currentLoc?->city ?? 'Koordinat GPS' }}, {{ $currentLoc?->country ?? '' }}</p>
+                        </div>
+                        <span class="px-2 py-0.5 text-[10px] font-bold rounded-full uppercase
+                            {{ !empty($currentWeather['success']) ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-gray-100 text-gray-600' }}">
+                            {{ !empty($currentWeather['success']) ? 'Live Open-Meteo' : 'Offline / Fallback' }}
+                        </span>
+                    </div>
+
+                    @if(!empty($currentWeather['success']))
+                        <div class="flex items-center justify-between p-3.5 bg-gradient-to-r from-emerald-50/60 to-teal-50/40 rounded-xl border border-emerald-100/80">
+                            <div class="flex items-center space-x-3">
+                                <span class="text-3xl">{{ $currentWeather['icon'] ?? '🌤️' }}</span>
+                                <div>
+                                    <div class="text-2xl font-extrabold text-gray-900 font-mono">
+                                        {{ $currentWeather['temperature'] ?? '-' }}°C
+                                    </div>
+                                    <p class="text-xs font-semibold text-gray-700">{{ $currentWeather['condition'] ?? 'Normal' }}</p>
+                                </div>
+                            </div>
+
+                            <div class="text-right text-xs text-gray-600 space-y-1">
+                                <div>Kelembaban: <span class="font-semibold text-gray-900">{{ $currentWeather['humidity'] ?? '-' }}%</span></div>
+                                <div>Kecepatan Angin: <span class="font-semibold text-gray-900">{{ $currentWeather['wind_speed'] ?? '-' }} km/h</span></div>
+                                @if(!empty($currentWeather['apparent_temperature']))
+                                    <div class="text-[11px] text-gray-500">Terasa Seperti: {{ $currentWeather['apparent_temperature'] }}°C</div>
+                                @endif
+                            </div>
+                        </div>
+                    @else
+                        <div class="p-3.5 bg-gray-50 rounded-xl border border-gray-200 text-xs text-gray-600 flex items-center space-x-2.5">
+                            <svg class="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                            <span>{{ $currentWeather['error'] ?? 'Informasi cuaca posisi terkini saat ini tidak tersedia (Fallback aman).' }}</span>
+                        </div>
+                    @endif
+                </div>
+            </div>
+
             <!-- Route & Schedule Cards -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <!-- Origin Card -->
@@ -669,4 +817,194 @@
             }
         </script>
     @endcan
+
+    @push('styles')
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+        <style>
+            .leaflet-popup-content-wrapper {
+                border-radius: 0.75rem;
+                padding: 0.25rem;
+                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            }
+            .leaflet-popup-content {
+                margin: 0.5rem;
+                line-height: 1.4;
+            }
+            .custom-div-icon {
+                background: transparent;
+                border: none;
+            }
+        </style>
+    @endpush
+
+    @push('scripts')
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const mapElement = document.getElementById('shipmentMap');
+                if (!mapElement) return;
+
+                const origin = @json($originMapData);
+                const destination = @json($destinationMapData);
+                const checkpoints = @json($checkpointsData);
+
+                // Default center fallback (Indonesia coordinates)
+                const defaultCenter = (origin.lat && origin.lng) ? [origin.lat, origin.lng] : [-2.5489, 118.0149];
+                const map = L.map('shipmentMap', {
+                    scrollWheelZoom: false
+                }).setView(defaultCenter, 6);
+
+                // TileLayer with official OpenStreetMap attribution
+                L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19,
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors'
+                }).addTo(map);
+
+                const bounds = L.latLngBounds();
+                const routePoints = [];
+
+                // Helper to create responsive Pin DivIcons
+                function createPinIcon(bgColor, ringColor, svgPath, isPulse = false) {
+                    return L.divIcon({
+                        className: 'custom-div-icon',
+                        html: `
+                            <div class="relative flex items-center justify-center cursor-pointer">
+                                ${isPulse ? '<span class="animate-ping absolute inline-flex h-8 w-8 rounded-full bg-blue-400 opacity-75"></span>' : ''}
+                                <div class="w-8 h-8 rounded-full ${bgColor} ${ringColor} ring-2 flex items-center justify-center text-white shadow-lg">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">${svgPath}</svg>
+                                </div>
+                            </div>
+                        `,
+                        iconSize: [32, 32],
+                        iconAnchor: [16, 16],
+                        popupAnchor: [0, -18],
+                    });
+                }
+
+                // 1. Origin Marker
+                if (origin.lat && origin.lng) {
+                    const originLatLng = [origin.lat, origin.lng];
+                    bounds.extend(originLatLng);
+                    routePoints.push(originLatLng);
+
+                    const originIcon = createPinIcon('bg-emerald-600', 'ring-emerald-200',
+                        '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />'
+                    );
+
+                    L.marker(originLatLng, { icon: originIcon })
+                        .addTo(map)
+                        .bindPopup(`
+                            <div class="p-1 min-w-[200px]">
+                                <span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 uppercase tracking-wider mb-1">TITIK ASAL (ORIGIN)</span>
+                                <h4 class="font-bold text-gray-900 text-sm leading-tight">${origin.name} (${origin.code || 'ASAL'})</h4>
+                                <p class="text-xs text-gray-600 mt-1">${origin.city}, ${origin.country}</p>
+                                <div class="mt-2 pt-1 border-t border-gray-100 text-[11px] text-gray-500 font-mono">
+                                    GPS: ${origin.lat.toFixed(5)}, ${origin.lng.toFixed(5)}
+                                </div>
+                            </div>
+                        `);
+                }
+
+                // 2. Tracking Checkpoints Markers
+                checkpoints.forEach((cp, idx) => {
+                    if (cp.lat && cp.lng) {
+                        const cpLatLng = [cp.lat, cp.lng];
+                        bounds.extend(cpLatLng);
+                        routePoints.push(cpLatLng);
+
+                        let icon;
+                        if (cp.is_latest) {
+                            icon = createPinIcon('bg-blue-600', 'ring-blue-300',
+                                '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />',
+                                true
+                            );
+                        } else if (cp.is_exception) {
+                            icon = createPinIcon('bg-rose-600', 'ring-rose-200',
+                                '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />'
+                            );
+                        } else {
+                            icon = createPinIcon('bg-indigo-600', 'ring-indigo-200',
+                                '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />'
+                            );
+                        }
+
+                        L.marker(cpLatLng, { icon: icon })
+                            .addTo(map)
+                            .bindPopup(`
+                                <div class="p-1 min-w-[220px]">
+                                    <div class="mb-1">
+                                        <span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold ${cp.is_exception ? 'bg-rose-100 text-rose-800' : (cp.is_latest ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-700')} uppercase">
+                                            ${cp.is_latest ? '★ POSISI TERKINI' : (cp.is_exception ? '⚠️ KENDALA / EXCEPTION' : 'CHECKPOINT #' + (idx + 1))}
+                                        </span>
+                                    </div>
+                                    <h4 class="font-bold text-gray-900 text-sm leading-tight">${cp.status}</h4>
+                                    <p class="text-xs text-gray-700 font-medium mt-1">${cp.location}</p>
+                                    <p class="text-[11px] text-gray-500 mt-0.5">Waktu: ${cp.time}</p>
+                                    ${cp.description ? '<div class="text-xs text-gray-700 mt-1.5 p-1.5 bg-gray-50 rounded border border-gray-100 italic">' + cp.description + '</div>' : ''}
+                                    <div class="mt-2 pt-1 border-t border-gray-100 text-[11px] text-gray-500 font-mono">
+                                        GPS: ${cp.lat.toFixed(5)}, ${cp.lng.toFixed(5)}
+                                    </div>
+                                </div>
+                            `);
+                    }
+                });
+
+                // 3. Destination Marker
+                if (destination.lat && destination.lng) {
+                    const destLatLng = [destination.lat, destination.lng];
+                    bounds.extend(destLatLng);
+
+                    const destIcon = createPinIcon('bg-red-600', 'ring-red-200',
+                        '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />'
+                    );
+
+                    L.marker(destLatLng, { icon: destIcon })
+                        .addTo(map)
+                        .bindPopup(`
+                            <div class="p-1 min-w-[200px]">
+                                <span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-800 uppercase tracking-wider mb-1">TITIK TUJUAN (DESTINATION)</span>
+                                <h4 class="font-bold text-gray-900 text-sm leading-tight">${destination.name} (${destination.code || 'TUJUAN'})</h4>
+                                <p class="text-xs text-gray-600 mt-1">${destination.city}, ${destination.country}</p>
+                                <div class="mt-2 pt-1 border-t border-gray-100 text-[11px] text-gray-500 font-mono">
+                                    GPS: ${destination.lat.toFixed(5)}, ${destination.lng.toFixed(5)}
+                                </div>
+                            </div>
+                        `);
+
+                    // Draw Route Lines
+                    if (routePoints.length > 1) {
+                        L.polyline(routePoints, {
+                            color: '#2563eb',
+                            weight: 4,
+                            opacity: 0.85
+                        }).addTo(map);
+                    }
+
+                    // Dashed line projecting to destination
+                    const lastPoint = routePoints.length > 0 ? routePoints[routePoints.length - 1] : (origin.lat ? [origin.lat, origin.lng] : null);
+                    if (lastPoint && (lastPoint[0] !== destLatLng[0] || lastPoint[1] !== destLatLng[1])) {
+                        L.polyline([lastPoint, destLatLng], {
+                            color: '#9333ea',
+                            weight: 3,
+                            opacity: 0.75,
+                            dashArray: '8, 8'
+                        }).addTo(map);
+                    }
+                }
+
+                // Auto-fit bounds
+                if (bounds.isValid()) {
+                    map.fitBounds(bounds, { padding: [45, 45], maxZoom: 13 });
+                }
+
+                setTimeout(() => { map.invalidateSize(); }, 300);
+
+                window.resetShipmentMap = function () {
+                    if (bounds.isValid()) {
+                        map.fitBounds(bounds, { padding: [45, 45], maxZoom: 13 });
+                    }
+                };
+            });
+        </script>
+    @endpush
 </x-app-layout>

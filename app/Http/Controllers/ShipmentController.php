@@ -10,8 +10,10 @@ use App\Models\Location;
 use App\Models\Shipment;
 use App\Models\User;
 use App\Services\EtaService;
+use App\Services\GeocodingService;
 use App\Services\ShipmentService;
 use App\Services\TrackingService;
+use App\Services\WeatherService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -103,8 +105,12 @@ class ShipmentController extends Controller
     /**
      * Display the specified resource with historical tracking timeline and latest coordinates.
      */
-    public function show(Shipment $shipment, EtaService $etaService): View
-    {
+    public function show(
+        Shipment $shipment,
+        EtaService $etaService,
+        WeatherService $weatherService,
+        GeocodingService $geocodingService
+    ): View {
         $this->authorize('view', $shipment);
 
         $shipment->load([
@@ -123,7 +129,75 @@ class ShipmentController extends Controller
         $locations = Location::orderBy('name')->get();
         $etaAnalysis = $etaService->analyzeShipment($shipment);
 
-        return view('shipments.show', compact('shipment', 'timeline', 'latestEvent', 'locations', 'etaAnalysis'));
+        // Prepare map checkpoints data
+        $checkpointsData = $timeline->filter(function ($item) {
+            return ! empty($item->latitude) && ! empty($item->longitude);
+        })->map(function ($item) {
+            return [
+                'lat' => (float) $item->latitude,
+                'lng' => (float) $item->longitude,
+                'status' => $item->status,
+                'time' => $item->timestamp ? $item->timestamp->format('d M Y, H:i') : '-',
+                'location' => $item->location?->name ?? 'Koordinat GPS (' . round($item->latitude, 4) . ', ' . round($item->longitude, 4) . ')',
+                'description' => $item->description,
+                'is_exception' => (bool) $item->is_exception,
+                'is_latest' => false,
+            ];
+        })->values()->toArray();
+
+        if (! empty($checkpointsData)) {
+            $checkpointsData[count($checkpointsData) - 1]['is_latest'] = true;
+        }
+
+        $originMapData = [
+            'lat' => $shipment->origin?->latitude ? (float) $shipment->origin->latitude : null,
+            'lng' => $shipment->origin?->longitude ? (float) $shipment->origin->longitude : null,
+            'name' => $shipment->origin?->name,
+            'city' => $shipment->origin?->city,
+            'country' => $shipment->origin?->country,
+            'code' => $shipment->origin?->code,
+            'type' => strtoupper($shipment->origin?->type ?? 'ORIGIN'),
+        ];
+
+        $destinationMapData = [
+            'lat' => $shipment->destination?->latitude ? (float) $shipment->destination->latitude : null,
+            'lng' => $shipment->destination?->longitude ? (float) $shipment->destination->longitude : null,
+            'name' => $shipment->destination?->name,
+            'city' => $shipment->destination?->city,
+            'country' => $shipment->destination?->country,
+            'code' => $shipment->destination?->code,
+            'type' => strtoupper($shipment->destination?->type ?? 'DESTINATION'),
+        ];
+
+        // Fetch external weather for destination and current location
+        $destinationWeather = null;
+        if ($shipment->destination && $shipment->destination->latitude && $shipment->destination->longitude) {
+            $destinationWeather = $weatherService->getWeather(
+                (float) $shipment->destination->latitude,
+                (float) $shipment->destination->longitude
+            );
+        }
+
+        $currentLat = $latestEvent?->latitude ?? $latestEvent?->location?->latitude ?? $shipment->origin?->latitude;
+        $currentLng = $latestEvent?->longitude ?? $latestEvent?->location?->longitude ?? $shipment->origin?->longitude;
+
+        $currentWeather = null;
+        if ($currentLat && $currentLng) {
+            $currentWeather = $weatherService->getWeather((float) $currentLat, (float) $currentLng);
+        }
+
+        return view('shipments.show', compact(
+            'shipment',
+            'timeline',
+            'latestEvent',
+            'locations',
+            'etaAnalysis',
+            'destinationWeather',
+            'currentWeather',
+            'checkpointsData',
+            'originMapData',
+            'destinationMapData'
+        ));
     }
 
     /**
