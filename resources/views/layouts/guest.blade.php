@@ -1,4 +1,3 @@
-@props(['split' => false])
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
@@ -10,26 +9,16 @@
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700,800,900&display=swap" rel="stylesheet" />
+        <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700,800&display=swap" rel="stylesheet" />
 
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="font-sans text-slate-800 antialiased bg-[#F8FAFC]">
-        @if ($split)
-            {{ $slot }}
-        @else
-            <div class="min-h-screen flex flex-col sm:justify-center items-center py-12 px-4 bg-[#F8FAFC]">
-                <div class="mb-4">
-                    <a href="/" class="flex flex-col items-center hover:opacity-90 transition">
-                        <x-application-logo class="h-12 w-auto text-slate-900" />
-                    </a>
-                </div>
-
-                <div class="w-full sm:max-w-md px-6 py-6 bg-white shadow-xl border border-slate-200/80 overflow-hidden rounded-2xl">
-                    {{ $slot }}
-                </div>
+    <body class="font-sans text-slate-800 antialiased bg-gradient-to-br from-[#F1F5F9] via-slate-50 to-[#E2E8F0]">
+        <div class="min-h-screen flex flex-col justify-center items-center py-10 px-4 sm:px-6">
+            <div class="w-full sm:max-w-md p-8 sm:p-9 bg-white shadow-xl border border-slate-200/80 rounded-2xl">
+                {{ $slot }}
             </div>
-        @endif
+        </div>
     </body>
 </html>
