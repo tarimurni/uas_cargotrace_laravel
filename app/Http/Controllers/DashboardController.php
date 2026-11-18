@@ -154,7 +154,46 @@ class DashboardController extends Controller
         $totalCarriers = $user->isAdmin() ? Carrier::count() : 0;
         $totalLocations = $user->isAdmin() ? Location::count() : 0;
 
-        // Global Shipment Map Data (active coordinates for Leaflet)
+        // Global Shipment Map & 3D Globe Data
+        $globalMapData = self::getGlobalShipmentData($user);
+
+        return view('dashboard', compact(
+            'totalShipments',
+            'inTransitCount',
+            'delayedCount',
+            'deliveredCount',
+            'openExceptionsCount',
+            'totalExceptionsCount',
+            'delayRate',
+            'exceptionRate',
+            'onTimeDeliveryRate',
+            'avgDelayDuration',
+            'avgExceptionResolutionTime',
+            'statusChartLabels',
+            'statusChartValues',
+            'carrierChartLabels',
+            'carrierChartValues',
+            'globalMapData',
+            'recentShipments',
+            'recentExceptions',
+            'notifications',
+            'totalCarriers',
+            'totalLocations'
+        ));
+    }
+
+    /**
+     * Get active shipment coordinates and route data for 2D map and 3D globe visualization.
+     */
+    public static function getGlobalShipmentData($user): array
+    {
+        $shipmentQuery = Shipment::query();
+
+        // Customer sees only their own shipments
+        if ($user && $user->isCustomer()) {
+            $shipmentQuery->where('customer_id', $user->id);
+        }
+
         $globalMapShipments = (clone $shipmentQuery)
             ->with(['origin', 'destination', 'carrier'])
             ->whereHas('origin', function ($q) {
@@ -165,7 +204,7 @@ class DashboardController extends Controller
             })
             ->get();
 
-        $globalMapData = $globalMapShipments->map(function ($s) {
+        return $globalMapShipments->map(function ($s) {
             return [
                 'id' => $s->id,
                 'shipment_number' => $s->shipment_number,
@@ -194,29 +233,5 @@ class DashboardController extends Controller
                 'url' => route('shipments.show', $s),
             ];
         })->values()->toArray();
-
-        return view('dashboard', compact(
-            'totalShipments',
-            'inTransitCount',
-            'delayedCount',
-            'deliveredCount',
-            'openExceptionsCount',
-            'totalExceptionsCount',
-            'delayRate',
-            'exceptionRate',
-            'onTimeDeliveryRate',
-            'avgDelayDuration',
-            'avgExceptionResolutionTime',
-            'statusChartLabels',
-            'statusChartValues',
-            'carrierChartLabels',
-            'carrierChartValues',
-            'globalMapData',
-            'recentShipments',
-            'recentExceptions',
-            'notifications',
-            'totalCarriers',
-            'totalLocations'
-        ));
     }
 }

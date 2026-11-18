@@ -3,11 +3,11 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
             <div class="flex">
-                <!-- Logo -->
+                <!-- Logo (Opens 3D Global Shipment Globe Modal) -->
                 <div class="shrink-0 flex items-center">
-                    <a href="{{ route('dashboard') }}#global-map" class="flex items-center hover:opacity-90 transition">
+                    <button type="button" onclick="openGlobeModal()" class="flex items-center text-left hover:opacity-90 transition focus:outline-none focus:ring-2 focus:ring-sky-500/50 rounded-lg p-0.5 cursor-pointer" title="Buka 3D Global Shipment Globe">
                         <x-application-logo class="block h-9 w-auto text-white" />
-                    </a>
+                    </button>
                 </div>
 
                 <!-- Navigation Links -->
@@ -168,4 +168,7 @@
             </div>
         </div>
     </div>
+
+    <!-- 3D Global Shipment Globe Modal -->
+    @include('components.globe-modal')
 </nav>

@@ -18,8 +18,11 @@ Route::get('/', function () {
 });
 
 Route::middleware(['auth'])->group(function () {
-    // Dashboard
+    // Dashboard & 3D Globe Data
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
+    Route::get('/api/global-globe-shipments', function (\Illuminate\Http\Request $request) {
+        return response()->json(\App\Http\Controllers\DashboardController::getGlobalShipmentData($request->user()));
+    })->name('global.globe-shipments');
 
     // Profile
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

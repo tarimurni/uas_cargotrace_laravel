@@ -14,6 +14,9 @@
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
 
+        <!-- Globe.gl 3D Interactive WebGL Library (CDN) -->
+        <script src="https://unpkg.com/globe.gl"></script>
+
         @stack('styles')
     </head>
     <body class="font-sans antialiased text-slate-800">
