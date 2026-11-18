@@ -6,12 +6,12 @@ use App\Models\Carrier;
 use App\Models\Location;
 use App\Models\Shipment;
 use App\Models\User;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class ShipmentApiTest extends TestCase
 {
-    use DatabaseTransactions;
+    use RefreshDatabase;
 
     protected User $admin;
     protected User $operator;

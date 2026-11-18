@@ -163,6 +163,10 @@ class ShipmentService
                 $data['current_status'] = $this->normalizeStatus($data['current_status']);
             }
 
+            if (empty($data['estimated_arrival']) && !empty($data['expected_arrival'])) {
+                $data['estimated_arrival'] = $data['expected_arrival'];
+            }
+
             $shipment = Shipment::create($data);
 
             foreach ($items as $item) {

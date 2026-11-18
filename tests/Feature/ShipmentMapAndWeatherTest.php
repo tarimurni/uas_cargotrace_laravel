@@ -6,13 +6,13 @@ use App\Models\Carrier;
 use App\Models\Location;
 use App\Models\Shipment;
 use App\Models\User;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class ShipmentMapAndWeatherTest extends TestCase
 {
-    use DatabaseTransactions;
+    use RefreshDatabase;
 
     protected User $operator;
     protected Carrier $carrier;

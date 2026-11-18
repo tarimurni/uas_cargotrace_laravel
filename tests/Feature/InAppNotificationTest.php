@@ -10,12 +10,12 @@ use App\Models\User;
 use App\Services\EtaService;
 use App\Services\ExceptionService;
 use App\Services\ShipmentService;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class InAppNotificationTest extends TestCase
 {
-    use DatabaseTransactions;
+    use RefreshDatabase;
 
     protected User $customer;
     protected User $operator;

@@ -3,13 +3,13 @@
 namespace Tests\Feature\Api;
 
 use App\Models\User;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class AuthApiTest extends TestCase
 {
-    use DatabaseTransactions;
+    use RefreshDatabase;
     public function test_user_can_register_via_api(): void
     {
         $response = $this->postJson(route('api.register'), [
