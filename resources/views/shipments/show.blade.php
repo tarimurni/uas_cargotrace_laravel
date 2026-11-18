@@ -821,6 +821,17 @@
     @push('styles')
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
         <style>
+            .leaflet-control-layers {
+                border-radius: 0.6rem !important;
+                border: 1px solid rgba(226, 232, 240, 0.9) !important;
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+                font-family: inherit !important;
+                font-size: 11px !important;
+                font-weight: 600 !important;
+                padding: 6px 12px !important;
+                background: rgba(255, 255, 255, 0.95) !important;
+                backdrop-filter: blur(4px);
+            }
             .leaflet-popup-content-wrapper {
                 border-radius: 0.75rem;
                 padding: 0.25rem;
@@ -851,14 +862,40 @@
                 // Default center fallback (Indonesia coordinates)
                 const defaultCenter = (origin.lat && origin.lng) ? [origin.lat, origin.lng] : [-2.5489, 118.0149];
                 const map = L.map('shipmentMap', {
-                    scrollWheelZoom: false
+                    scrollWheelZoom: true,
+                    zoomControl: true,
+                    maxZoom: 19
                 }).setView(defaultCenter, 6);
 
-                // TileLayer with official OpenStreetMap attribution
-                L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                // Tile Layer 1: CartoDB Voyager (High-def sharp navigation map)
+                const voyagerLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                    maxZoom: 19,
+                    subdomains: 'abcd',
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>'
+                });
+
+                // Tile Layer 2: OpenStreetMap Standard
+                const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     maxZoom: 19,
                     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors'
-                }).addTo(map);
+                });
+
+                // Tile Layer 3: Esri World Imagery (Realistic satellite view)
+                const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                    maxZoom: 19,
+                    attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+                });
+
+                // Default layer: CartoDB Voyager
+                voyagerLayer.addTo(map);
+
+                // Base layer switcher
+                const baseMaps = {
+                    "Peta Navigasi (Voyager)": voyagerLayer,
+                    "OpenStreetMap Standar": osmLayer,
+                    "Citra Satelit (Esri World Imagery)": satelliteLayer
+                };
+                L.control.layers(baseMaps, null, { position: 'topright' }).addTo(map);
 
                 const bounds = L.latLngBounds();
                 const routePoints = [];
@@ -997,7 +1034,8 @@
                     map.fitBounds(bounds, { padding: [45, 45], maxZoom: 13 });
                 }
 
-                setTimeout(() => { map.invalidateSize(); }, 300);
+                setTimeout(() => { map.invalidateSize(); }, 200);
+                window.addEventListener('resize', () => { map.invalidateSize(); });
 
                 window.resetShipmentMap = function () {
                     if (bounds.isValid()) {

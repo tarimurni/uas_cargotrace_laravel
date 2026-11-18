@@ -13,12 +13,12 @@
 
             <div class="flex items-center gap-2">
                 @can('create', App\Models\Shipment::class)
-                    <a href="{{ route('shipments.create') }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 shadow-sm transition">
+                    <a href="{{ route('shipments.create') }}" class="inline-flex items-center px-4 py-2 bg-sky-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-sky-700 active:bg-sky-800 shadow-sm transition">
                         <svg class="w-4 h-4 me-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                         Buat Shipment Baru
                     </a>
                 @endcan
-                <a href="{{ route('shipments.index') }}" class="inline-flex items-center px-3 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-50 shadow-sm transition">
+                <a href="{{ route('shipments.index') }}" class="inline-flex items-center px-3.5 py-2 bg-white border border-slate-300 rounded-lg font-semibold text-xs text-slate-700 uppercase tracking-widest hover:bg-slate-50 shadow-xs transition">
                     Lihat Semua Kargo &rarr;
                 </a>
             </div>
@@ -326,6 +326,17 @@
     @push('styles')
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
         <style>
+            .leaflet-control-layers {
+                border-radius: 0.6rem !important;
+                border: 1px solid rgba(226, 232, 240, 0.9) !important;
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+                font-family: inherit !important;
+                font-size: 11px !important;
+                font-weight: 600 !important;
+                padding: 6px 12px !important;
+                background: rgba(255, 255, 255, 0.95) !important;
+                backdrop-filter: blur(4px);
+            }
             .leaflet-popup-content-wrapper {
                 border-radius: 0.75rem;
                 padding: 0.25rem;
@@ -358,9 +369,9 @@
                                 data: @json($statusChartValues),
                                 backgroundColor: [
                                     '#94a3b8', // Created (Slate)
-                                    '#a855f7', // Booked (Purple)
-                                    '#06b6d4', // Picked Up (Cyan)
-                                    '#3b82f6', // In Transit (Blue)
+                                    '#6366f1', // Booked (Indigo)
+                                    '#0284c7', // Picked Up (Ocean Blue)
+                                    '#0369a1', // In Transit (Deep Sky)
                                     '#10b981', // Delivered (Emerald)
                                 ],
                                 borderWidth: 2,
@@ -393,7 +404,7 @@
                             datasets: [{
                                 label: 'Jumlah Pengiriman',
                                 data: @json($carrierChartValues),
-                                backgroundColor: '#6366f1',
+                                backgroundColor: '#0284c7',
                                 borderRadius: 6,
                             }]
                         },
@@ -413,20 +424,45 @@
                     });
                 }
 
-                // 3. Global Shipment Map (Leaflet + OpenStreetMap)
+                // 3. Global Shipment Map (Leaflet + OpenStreetMap + CartoDB + Esri Satellite)
                 const globalMapElement = document.getElementById('globalShipmentMap');
                 if (globalMapElement) {
                     const globalMap = L.map('globalShipmentMap', {
-                        scrollWheelZoom: false,
-                        minZoom: 1,
+                        scrollWheelZoom: true,
+                        zoomControl: true,
+                        maxZoom: 19,
                         worldCopyJump: true
                     }).setView([15, 30], 2);
 
-                    // TileLayer with official OpenStreetMap attribution
-                    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                        maxZoom: 18,
+                    // Tile Layer 1: CartoDB Voyager (High-def sharp navigation map)
+                    const voyagerLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                        maxZoom: 19,
+                        subdomains: 'abcd',
+                        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>'
+                    });
+
+                    // Tile Layer 2: OpenStreetMap Standard
+                    const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        maxZoom: 19,
                         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors'
-                    }).addTo(globalMap);
+                    });
+
+                    // Tile Layer 3: Esri World Imagery (Realistic satellite view)
+                    const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                        maxZoom: 19,
+                        attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+                    });
+
+                    // Default layer: CartoDB Voyager
+                    voyagerLayer.addTo(globalMap);
+
+                    // Base layers switcher
+                    const baseMaps = {
+                        "Peta Navigasi (Voyager)": voyagerLayer,
+                        "OpenStreetMap Standar": osmLayer,
+                        "Citra Satelit (Esri World Imagery)": satelliteLayer
+                    };
+                    L.control.layers(baseMaps, null, { position: 'topright' }).addTo(globalMap);
 
                     const globalRoutes = @json($globalMapData);
                     const globalBounds = L.latLngBounds();
@@ -458,35 +494,35 @@
                         globalBounds.extend(destLatLng);
                         hasValidPoints = true;
 
-                        let routeColor = '#3b82f6'; // default In Transit blue
-                        let statusBadgeClass = 'bg-blue-100 text-blue-800';
+                        let routeColor = '#0284c7'; // default In Transit ocean blue
+                        let statusBadgeClass = 'bg-sky-100 text-sky-800 border border-sky-300';
 
                         if (s.is_delayed) {
-                            routeColor = '#ef4444'; // red
-                            statusBadgeClass = 'bg-red-100 text-red-800';
+                            routeColor = '#e11d48'; // red
+                            statusBadgeClass = 'bg-rose-100 text-rose-800 border border-rose-300 font-bold';
                         } else if (s.status === 'DELIVERED') {
-                            routeColor = '#10b981'; // green
-                            statusBadgeClass = 'bg-green-100 text-green-800';
+                            routeColor = '#059669'; // emerald
+                            statusBadgeClass = 'bg-emerald-100 text-emerald-800 border border-emerald-300 font-semibold';
                         } else if (s.status === 'BOOKED' || s.status === 'CREATED' || s.status === 'PENDING') {
-                            routeColor = '#8b5cf6'; // purple
-                            statusBadgeClass = 'bg-purple-100 text-purple-800';
+                            routeColor = '#4f46e5'; // indigo
+                            statusBadgeClass = 'bg-indigo-100 text-indigo-800 border border-indigo-300 font-semibold';
                         }
 
                         // Origin marker
                         const originMarker = L.marker(origLatLng, {
-                            icon: createMarkerIcon('bg-slate-700', 'ring-slate-300', 'O')
+                            icon: createMarkerIcon('bg-slate-800', 'ring-sky-400', 'O')
                         }).addTo(globalMap);
 
                         // Destination marker
                         const destMarker = L.marker(destLatLng, {
-                            icon: createMarkerIcon(s.is_delayed ? 'bg-red-600' : 'bg-emerald-600', 'ring-white', 'D')
+                            icon: createMarkerIcon(s.is_delayed ? 'bg-rose-600' : 'bg-emerald-600', 'ring-white', 'D')
                         }).addTo(globalMap);
 
                         // Route polyline connecting origin and destination
                         const polyline = L.polyline([origLatLng, destLatLng], {
                             color: routeColor,
                             weight: 3.5,
-                            opacity: 0.85,
+                            opacity: 0.9,
                             dashArray: s.status === 'DELIVERED' ? null : '6, 8',
                             lineCap: 'round',
                             lineJoin: 'round'
@@ -494,22 +530,22 @@
 
                         const popupHtml = `
                             <div class="p-2.5 min-w-[210px] text-xs">
-                                <div class="flex items-center justify-between gap-2 border-b border-gray-100 pb-1.5 mb-2">
-                                    <a href="${s.url}" class="font-mono font-bold text-indigo-600 text-sm hover:underline">${s.shipment_number}</a>
-                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase ${statusBadgeClass}">${s.status_label}</span>
+                                <div class="flex items-center justify-between gap-2 border-b border-slate-100 pb-1.5 mb-2">
+                                    <a href="${s.url}" class="font-mono font-bold text-sky-600 text-sm hover:underline">${s.shipment_number}</a>
+                                    <span class="px-2 py-0.5 rounded text-[10px] uppercase ${statusBadgeClass}">${s.status_label}</span>
                                 </div>
-                                <div class="space-y-1 text-gray-600">
-                                    <div class="font-bold text-gray-900 flex items-center gap-1.5 text-xs">
+                                <div class="space-y-1 text-slate-600">
+                                    <div class="font-bold text-slate-900 flex items-center gap-1.5 text-xs">
                                         <span>${s.origin.city}</span>
-                                        <span class="text-indigo-500">&rarr;</span>
+                                        <span class="text-sky-500">&rarr;</span>
                                         <span>${s.destination.city}</span>
                                     </div>
-                                    <div class="text-[11px]"><span class="text-gray-400">Carrier:</span> <span class="font-medium text-gray-800">${s.carrier_name}</span></div>
-                                    <div class="text-[11px]"><span class="text-gray-400">Muatan:</span> <span class="font-medium text-gray-800">${s.cargo_type}</span></div>
-                                    ${s.is_delayed ? '<div class="text-red-600 font-bold text-[11px] mt-1 bg-red-50 p-1 rounded border border-red-100">&#x26A0; Peringatan Keterlambatan (Delayed)</div>' : ''}
+                                    <div class="text-[11px]"><span class="text-slate-400">Carrier:</span> <span class="font-medium text-slate-800">${s.carrier_name}</span></div>
+                                    <div class="text-[11px]"><span class="text-slate-400">Muatan:</span> <span class="font-medium text-slate-800">${s.cargo_type}</span></div>
+                                    ${s.is_delayed ? '<div class="text-rose-600 font-bold text-[11px] mt-1 bg-rose-50 p-1 rounded border border-rose-200">&#x26A0; Peringatan Keterlambatan (Delayed)</div>' : ''}
                                 </div>
-                                <div class="mt-2.5 pt-1.5 border-t border-gray-100 text-right">
-                                    <a href="${s.url}" class="inline-flex items-center font-bold text-indigo-600 hover:text-indigo-800 text-[11px]">
+                                <div class="mt-2.5 pt-1.5 border-t border-slate-100 text-right">
+                                    <a href="${s.url}" class="inline-flex items-center font-bold text-sky-600 hover:text-sky-800 text-[11px]">
                                         Buka Detail Kargo &rarr;
                                     </a>
                                 </div>
@@ -542,7 +578,11 @@
                     // Invalidate size to ensure clean tile rendering after layout paint
                     setTimeout(function () {
                         globalMap.invalidateSize();
-                    }, 300);
+                    }, 200);
+
+                    window.addEventListener('resize', function () {
+                        globalMap.invalidateSize();
+                    });
                 }
             });
         </script>
