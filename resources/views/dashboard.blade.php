@@ -178,6 +178,42 @@
                 </div>
             </div>
 
+            <!-- Global Shipment Map (Peta Distribusi Kargo Global) -->
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-xl p-6 border border-gray-100">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-gray-100 mb-4 gap-3">
+                    <div>
+                        <h3 class="text-sm font-bold text-gray-900 uppercase tracking-wider flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block animate-pulse"></span>
+                            Global Shipment Map (Peta Distribusi Global)
+                        </h3>
+                        <p class="text-xs text-gray-500 mt-0.5">Visualisasi rute dan sebaran kargo aktif lintas benua secara real-time</p>
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-2 text-xs">
+                        <div class="flex items-center gap-3 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100 text-[11px] font-medium text-gray-600">
+                            <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-blue-500"></span> In Transit</span>
+                            <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-red-500"></span> Delayed</span>
+                            <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> Delivered</span>
+                            <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-purple-500"></span> Booked / Other</span>
+                        </div>
+
+                        <button type="button" id="btnResetGlobalMap" class="inline-flex items-center px-2.5 py-1.5 bg-white border border-gray-300 rounded-md text-[11px] font-semibold text-gray-700 hover:bg-gray-50 shadow-sm transition">
+                            <svg class="w-3.5 h-3.5 me-1 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 012 2v2.945M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            Reset Tampilan Global
+                        </button>
+
+                        <button type="button" id="btnFitGlobalMap" class="inline-flex items-center px-2.5 py-1.5 bg-indigo-50 border border-indigo-200 rounded-md text-[11px] font-semibold text-indigo-700 hover:bg-indigo-100 shadow-sm transition">
+                            <svg class="w-3.5 h-3.5 me-1 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4h-4"/></svg>
+                            Fokus Semua Rute ({{ count($globalMapData) }})
+                        </button>
+                    </div>
+                </div>
+
+                <div class="relative">
+                    <div id="globalShipmentMap" class="w-full h-[460px] rounded-xl border border-gray-200 z-0"></div>
+                </div>
+            </div>
+
             <!-- Recent Shipments & Exceptions/Notifications Grid -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <!-- Recent Shipments Table (2 cols) -->
@@ -287,8 +323,28 @@
         </div>
     </div>
 
+    @push('styles')
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+        <style>
+            .leaflet-popup-content-wrapper {
+                border-radius: 0.75rem;
+                padding: 0.25rem;
+                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            }
+            .leaflet-popup-content {
+                margin: 0.5rem;
+                line-height: 1.4;
+            }
+            .custom-div-icon {
+                background: transparent;
+                border: none;
+            }
+        </style>
+    @endpush
+
     @push('scripts')
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
         <script>
             document.addEventListener('DOMContentLoaded', function () {
                 // 1. Status Doughnut Chart
@@ -355,6 +411,138 @@
                             }
                         }
                     });
+                }
+
+                // 3. Global Shipment Map (Leaflet + OpenStreetMap)
+                const globalMapElement = document.getElementById('globalShipmentMap');
+                if (globalMapElement) {
+                    const globalMap = L.map('globalShipmentMap', {
+                        scrollWheelZoom: false,
+                        minZoom: 1,
+                        worldCopyJump: true
+                    }).setView([15, 30], 2);
+
+                    // TileLayer with official OpenStreetMap attribution
+                    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        maxZoom: 18,
+                        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors'
+                    }).addTo(globalMap);
+
+                    const globalRoutes = @json($globalMapData);
+                    const globalBounds = L.latLngBounds();
+                    let hasValidPoints = false;
+
+                    function createMarkerIcon(bgColor, ringColor, label) {
+                        return L.divIcon({
+                            className: 'custom-div-icon',
+                            html: `
+                                <div class="relative flex items-center justify-center cursor-pointer group">
+                                    <div class="w-6 h-6 rounded-full ${bgColor} ${ringColor} ring-2 flex items-center justify-center text-white text-[10px] font-bold shadow-md">
+                                        ${label}
+                                    </div>
+                                </div>
+                            `,
+                            iconSize: [24, 24],
+                            iconAnchor: [12, 12],
+                            popupAnchor: [0, -14]
+                        });
+                    }
+
+                    globalRoutes.forEach(function (s) {
+                        if (!s.origin || !s.origin.lat || !s.destination || !s.destination.lat) return;
+
+                        const origLatLng = [s.origin.lat, s.origin.lng];
+                        const destLatLng = [s.destination.lat, s.destination.lng];
+
+                        globalBounds.extend(origLatLng);
+                        globalBounds.extend(destLatLng);
+                        hasValidPoints = true;
+
+                        let routeColor = '#3b82f6'; // default In Transit blue
+                        let statusBadgeClass = 'bg-blue-100 text-blue-800';
+
+                        if (s.is_delayed) {
+                            routeColor = '#ef4444'; // red
+                            statusBadgeClass = 'bg-red-100 text-red-800';
+                        } else if (s.status === 'DELIVERED') {
+                            routeColor = '#10b981'; // green
+                            statusBadgeClass = 'bg-green-100 text-green-800';
+                        } else if (s.status === 'BOOKED' || s.status === 'CREATED' || s.status === 'PENDING') {
+                            routeColor = '#8b5cf6'; // purple
+                            statusBadgeClass = 'bg-purple-100 text-purple-800';
+                        }
+
+                        // Origin marker
+                        const originMarker = L.marker(origLatLng, {
+                            icon: createMarkerIcon('bg-slate-700', 'ring-slate-300', 'O')
+                        }).addTo(globalMap);
+
+                        // Destination marker
+                        const destMarker = L.marker(destLatLng, {
+                            icon: createMarkerIcon(s.is_delayed ? 'bg-red-600' : 'bg-emerald-600', 'ring-white', 'D')
+                        }).addTo(globalMap);
+
+                        // Route polyline connecting origin and destination
+                        const polyline = L.polyline([origLatLng, destLatLng], {
+                            color: routeColor,
+                            weight: 3.5,
+                            opacity: 0.85,
+                            dashArray: s.status === 'DELIVERED' ? null : '6, 8',
+                            lineCap: 'round',
+                            lineJoin: 'round'
+                        }).addTo(globalMap);
+
+                        const popupHtml = `
+                            <div class="p-2.5 min-w-[210px] text-xs">
+                                <div class="flex items-center justify-between gap-2 border-b border-gray-100 pb-1.5 mb-2">
+                                    <a href="${s.url}" class="font-mono font-bold text-indigo-600 text-sm hover:underline">${s.shipment_number}</a>
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase ${statusBadgeClass}">${s.status_label}</span>
+                                </div>
+                                <div class="space-y-1 text-gray-600">
+                                    <div class="font-bold text-gray-900 flex items-center gap-1.5 text-xs">
+                                        <span>${s.origin.city}</span>
+                                        <span class="text-indigo-500">&rarr;</span>
+                                        <span>${s.destination.city}</span>
+                                    </div>
+                                    <div class="text-[11px]"><span class="text-gray-400">Carrier:</span> <span class="font-medium text-gray-800">${s.carrier_name}</span></div>
+                                    <div class="text-[11px]"><span class="text-gray-400">Muatan:</span> <span class="font-medium text-gray-800">${s.cargo_type}</span></div>
+                                    ${s.is_delayed ? '<div class="text-red-600 font-bold text-[11px] mt-1 bg-red-50 p-1 rounded border border-red-100">&#x26A0; Peringatan Keterlambatan (Delayed)</div>' : ''}
+                                </div>
+                                <div class="mt-2.5 pt-1.5 border-t border-gray-100 text-right">
+                                    <a href="${s.url}" class="inline-flex items-center font-bold text-indigo-600 hover:text-indigo-800 text-[11px]">
+                                        Buka Detail Kargo &rarr;
+                                    </a>
+                                </div>
+                            </div>
+                        `;
+
+                        originMarker.bindPopup(popupHtml);
+                        destMarker.bindPopup(popupHtml);
+                        polyline.bindPopup(popupHtml);
+                    });
+
+                    const btnReset = document.getElementById('btnResetGlobalMap');
+                    if (btnReset) {
+                        btnReset.addEventListener('click', function () {
+                            globalMap.setView([15, 30], 2);
+                        });
+                    }
+
+                    const btnFit = document.getElementById('btnFitGlobalMap');
+                    if (btnFit) {
+                        btnFit.addEventListener('click', function () {
+                            if (hasValidPoints) {
+                                globalMap.fitBounds(globalBounds, { padding: [50, 50], maxZoom: 8 });
+                            } else {
+                                globalMap.setView([15, 30], 2);
+                            }
+                        });
+                    }
+
+                    // Invalidate size to ensure clean tile rendering after layout paint
+                    setTimeout(function () {
+                        globalMap.invalidateSize();
+                    }, 300);
                 }
             });
         </script>

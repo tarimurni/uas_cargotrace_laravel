@@ -1,4 +1,10 @@
 <x-guest-layout>
+    <!-- Branding Heading -->
+    <div class="mb-5 text-center">
+        <h2 class="text-xl font-extrabold text-gray-900 tracking-tight">Masuk ke CargoTrace</h2>
+        <p class="text-xs text-gray-500 mt-1">Platform Pemantauan & Pelacakan Kargo Global</p>
+    </div>
+
     <!-- Session Status -->
     <x-auth-session-status class="mb-4" :status="session('status')" />
 

@@ -128,6 +128,9 @@ class DashboardAndChartTest extends TestCase
         $response->assertViewHas('carrierChartLabels');
         $response->assertViewHas('carrierChartValues');
 
+        // Assert Global Shipment Map data is passed
+        $response->assertViewHas('globalMapData');
+
         // Assert canvas elements and KPI cards are in HTML
         $response->assertSee('id="statusChart"', false);
         $response->assertSee('id="carrierChart"', false);
@@ -135,6 +138,12 @@ class DashboardAndChartTest extends TestCase
         $response->assertSee('On-Time Delivery Rate');
         $response->assertSee('Average Delay Duration');
         $response->assertSee('Average Exception Resolution Time');
+
+        // Assert Global Shipment Map Leaflet widget and OpenStreetMap attribution
+        $response->assertSee('id="globalShipmentMap"', false);
+        $response->assertSee('Global Shipment Map');
+        $response->assertSee('OpenStreetMap');
+        $response->assertSee('setView([15, 30], 2)', false);
     }
 
     public function test_dashboard_is_scoped_for_customer(): void

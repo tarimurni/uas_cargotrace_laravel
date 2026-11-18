@@ -1,4 +1,10 @@
 <x-guest-layout>
+    <!-- Branding Heading -->
+    <div class="mb-5 text-center">
+        <h2 class="text-xl font-extrabold text-gray-900 tracking-tight">Daftar Akun CargoTrace</h2>
+        <p class="text-xs text-gray-500 mt-1">Buat akun untuk memantau pengiriman barang Anda</p>
+    </div>
+
     <form method="POST" action="{{ route('register') }}">
         @csrf
 

@@ -154,6 +154,47 @@ class DashboardController extends Controller
         $totalCarriers = $user->isAdmin() ? Carrier::count() : 0;
         $totalLocations = $user->isAdmin() ? Location::count() : 0;
 
+        // Global Shipment Map Data (active coordinates for Leaflet)
+        $globalMapShipments = (clone $shipmentQuery)
+            ->with(['origin', 'destination', 'carrier'])
+            ->whereHas('origin', function ($q) {
+                $q->whereNotNull('latitude')->whereNotNull('longitude');
+            })
+            ->whereHas('destination', function ($q) {
+                $q->whereNotNull('latitude')->whereNotNull('longitude');
+            })
+            ->get();
+
+        $globalMapData = $globalMapShipments->map(function ($s) {
+            return [
+                'id' => $s->id,
+                'shipment_number' => $s->shipment_number,
+                'current_status' => $s->current_status,
+                'status' => strtoupper($s->current_status),
+                'status_label' => str_replace('_', ' ', strtoupper($s->current_status)),
+                'carrier_name' => $s->carrier?->name ?? 'N/A',
+                'cargo_type' => $s->cargo_type ?? 'General Cargo',
+                'is_delayed' => (bool) $s->is_delayed,
+                'origin' => [
+                    'name' => $s->origin?->name,
+                    'code' => $s->origin?->code,
+                    'city' => $s->origin?->city,
+                    'country' => $s->origin?->country,
+                    'lat' => (float) $s->origin?->latitude,
+                    'lng' => (float) $s->origin?->longitude,
+                ],
+                'destination' => [
+                    'name' => $s->destination?->name,
+                    'code' => $s->destination?->code,
+                    'city' => $s->destination?->city,
+                    'country' => $s->destination?->country,
+                    'lat' => (float) $s->destination?->latitude,
+                    'lng' => (float) $s->destination?->longitude,
+                ],
+                'url' => route('shipments.show', $s),
+            ];
+        })->values()->toArray();
+
         return view('dashboard', compact(
             'totalShipments',
             'inTransitCount',
@@ -170,6 +211,7 @@ class DashboardController extends Controller
             'statusChartValues',
             'carrierChartLabels',
             'carrierChartValues',
+            'globalMapData',
             'recentShipments',
             'recentExceptions',
             'notifications',
