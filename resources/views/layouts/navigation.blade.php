@@ -5,7 +5,7 @@
             <div class="flex">
                 <!-- Logo -->
                 <div class="shrink-0 flex items-center">
-                    <a href="{{ route('dashboard') }}" class="flex items-center hover:opacity-90 transition">
+                    <a href="{{ route('dashboard') }}#global-map" class="flex items-center hover:opacity-90 transition">
                         <x-application-logo class="block h-9 w-auto text-white" />
                     </a>
                 </div>

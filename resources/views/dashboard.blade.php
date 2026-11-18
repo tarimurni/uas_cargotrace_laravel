@@ -179,7 +179,7 @@
             </div>
 
             <!-- Global Shipment Map (Peta Distribusi Kargo Global) -->
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-xl p-6 border border-gray-100">
+            <div id="global-map" class="bg-white overflow-hidden shadow-sm sm:rounded-xl p-6 border border-gray-100 scroll-mt-20">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-gray-100 mb-4 gap-3">
                     <div>
                         <h3 class="text-sm font-bold text-gray-900 uppercase tracking-wider flex items-center gap-2">
@@ -190,6 +190,18 @@
                     </div>
 
                     <div class="flex flex-wrap items-center gap-2 text-xs">
+                        <!-- View Mode Toggle: 2D Map vs 3D Globe -->
+                        <div class="inline-flex p-1 bg-slate-100 rounded-lg border border-slate-200">
+                            <button type="button" id="btnMode2D" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition bg-white text-sky-700 shadow-xs">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+                                2D Map (Leaflet)
+                            </button>
+                            <button type="button" id="btnMode3D" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold text-slate-600 hover:text-slate-900 transition">
+                                <svg class="w-3.5 h-3.5 text-sky-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/></svg>
+                                3D Globe
+                            </button>
+                        </div>
+
                         <div class="flex items-center gap-3 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100 text-[11px] font-medium text-gray-600">
                             <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-blue-500"></span> In Transit</span>
                             <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-red-500"></span> Delayed</span>
@@ -198,7 +210,7 @@
                         </div>
 
                         <button type="button" id="btnResetGlobalMap" class="inline-flex items-center px-2.5 py-1.5 bg-white border border-gray-300 rounded-md text-[11px] font-semibold text-gray-700 hover:bg-gray-50 shadow-sm transition">
-                            <svg class="w-3.5 h-3.5 me-1 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 012 2v2.945M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            <svg class="w-3.5 h-3.5 me-1 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                             Reset Tampilan Global
                         </button>
 
@@ -210,7 +222,16 @@
                 </div>
 
                 <div class="relative">
-                    <div id="globalShipmentMap" class="w-full h-[460px] rounded-xl border border-gray-200 z-0"></div>
+                    <!-- 2D Leaflet Container (Default) -->
+                    <div id="globalShipmentMap" class="w-full h-[480px] rounded-xl border border-gray-200 z-0"></div>
+
+                    <!-- 3D Globe Container (Interactive globe.gl) -->
+                    <div id="globe3dContainer" class="w-full h-[480px] rounded-xl border border-slate-800 bg-[#070D1E] relative overflow-hidden hidden z-0">
+                        <div class="absolute top-3 left-3 z-10 bg-slate-900/85 backdrop-blur-sm text-slate-200 px-3 py-1.5 rounded-lg text-[11px] font-medium border border-slate-700/60 pointer-events-none flex items-center gap-2 shadow-md">
+                            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                            <span>Drag untuk memutar 3D Globe • Scroll untuk zoom rute kargo</span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -363,6 +384,7 @@
     @push('scripts')
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+        <script src="https://unpkg.com/globe.gl"></script>
         <script>
             document.addEventListener('DOMContentLoaded', function () {
                 // 1. Status Doughnut Chart
@@ -591,6 +613,148 @@
 
                     window.addEventListener('resize', function () {
                         globalMap.invalidateSize();
+                    });
+
+                    // --- 3D Globe Mode (globe.gl) ---
+                    const btnMode2D = document.getElementById('btnMode2D');
+                    const btnMode3D = document.getElementById('btnMode3D');
+                    const container2D = document.getElementById('globalShipmentMap');
+                    const container3D = document.getElementById('globe3dContainer');
+                    let globeInstance = null;
+
+                    function initGlobe3D() {
+                        if (globeInstance) return;
+                        if (typeof Globe === 'undefined') {
+                            console.warn('globe.gl library not loaded yet');
+                            return;
+                        }
+
+                        // Prepare Arcs and Points from active database shipments ($globalMapData)
+                        const globeArcs = [];
+                        const globePoints = [];
+                        const uniquePoints = new Set();
+
+                        globalRoutes.forEach(function (s) {
+                            if (!s.origin || !s.origin.lat || !s.destination || !s.destination.lat) return;
+
+                            let arcColors = ['#38bdf8', '#0284c7'];
+                            if (s.is_delayed) {
+                                arcColors = ['#f43f5e', '#e11d48'];
+                            } else if (s.status === 'DELIVERED') {
+                                arcColors = ['#34d399', '#059669'];
+                            } else if (s.status === 'BOOKED' || s.status === 'CREATED' || s.status === 'PENDING') {
+                                arcColors = ['#c084fc', '#7c3aed'];
+                            }
+
+                            globeArcs.push({
+                                startLat: s.origin.lat,
+                                startLng: s.origin.lng,
+                                endLat: s.destination.lat,
+                                endLng: s.destination.lng,
+                                color: arcColors,
+                                label: `
+                                    <div style="background: rgba(15,23,42,0.92); color: #fff; padding: 6px 10px; border-radius: 8px; font-size: 11px; border: 1px solid rgba(56,189,248,0.4); box-shadow: 0 4px 12px rgba(0,0,0,0.5);">
+                                        <b style="color: #38bdf8; font-size: 12px;">#${s.shipment_number}</b> (${s.status_label})<br/>
+                                        <span style="color: #e2e8f0;">${s.origin.city} &rarr; ${s.destination.city}</span><br/>
+                                        <span style="color: #94a3b8;">Armada: ${s.carrier_name}</span>
+                                        ${s.is_delayed ? '<br/><span style="color: #f43f5e; font-weight: bold;">⚠️ Delayed</span>' : ''}
+                                    </div>
+                                `
+                            });
+
+                            const origKey = `${s.origin.lat.toFixed(3)},${s.origin.lng.toFixed(3)}`;
+                            if (!uniquePoints.has(origKey)) {
+                                uniquePoints.add(origKey);
+                                globePoints.push({
+                                    lat: s.origin.lat,
+                                    lng: s.origin.lng,
+                                    color: '#38bdf8',
+                                    size: 0.65,
+                                    label: `<div style="background:#0f172a; color:#fff; padding:3px 8px; border-radius:6px; font-size:11px; font-weight:bold;">📍 ${s.origin.city} (${s.origin.name})</div>`
+                                });
+                            }
+
+                            const destKey = `${s.destination.lat.toFixed(3)},${s.destination.lng.toFixed(3)}`;
+                            if (!uniquePoints.has(destKey)) {
+                                uniquePoints.add(destKey);
+                                globePoints.push({
+                                    lat: s.destination.lat,
+                                    lng: s.destination.lng,
+                                    color: '#10b981',
+                                    size: 0.65,
+                                    label: `<div style="background:#0f172a; color:#fff; padding:3px 8px; border-radius:6px; font-size:11px; font-weight:bold;">🏁 ${s.destination.city} (${s.destination.name})</div>`
+                                });
+                            }
+                        });
+
+                        globeInstance = Globe()
+                            (container3D)
+                            .backgroundColor('#070D1E')
+                            .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg')
+                            .bumpImageUrl('https://unpkg.com/three-globe/example/img/earth-topology.png')
+                            .showAtmosphere(true)
+                            .atmosphereColor('#38bdf8')
+                            .atmosphereAltitude(0.2)
+                            .pointsData(globePoints)
+                            .pointLat('lat')
+                            .pointLng('lng')
+                            .pointColor('color')
+                            .pointAltitude(0.015)
+                            .pointRadius('size')
+                            .pointLabel('label')
+                            .arcsData(globeArcs)
+                            .arcStartLat('startLat')
+                            .arcStartLng('startLng')
+                            .arcEndLat('endLat')
+                            .arcEndLng('endLng')
+                            .arcColor('color')
+                            .arcAltitude(0.25)
+                            .arcStroke(1.5)
+                            .arcDashLength(0.5)
+                            .arcDashGap(0.2)
+                            .arcDashAnimateTime(1800)
+                            .arcLabel('label')
+                            .width(container3D.clientWidth)
+                            .height(container3D.clientHeight);
+
+                        globeInstance.controls().autoRotate = true;
+                        globeInstance.controls().autoRotateSpeed = 0.6;
+                        globeInstance.pointOfView({ lat: 15, lng: 110, altitude: 2.2 }, 800);
+                    }
+
+                    if (btnMode2D && btnMode3D) {
+                        btnMode2D.addEventListener('click', function () {
+                            btnMode2D.className = 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition bg-white text-sky-700 shadow-xs';
+                            btnMode3D.className = 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold text-slate-600 hover:text-slate-900 transition';
+
+                            container2D.classList.remove('hidden');
+                            container3D.classList.add('hidden');
+
+                            setTimeout(function () {
+                                globalMap.invalidateSize();
+                            }, 100);
+                        });
+
+                        btnMode3D.addEventListener('click', function () {
+                            btnMode3D.className = 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition bg-white text-sky-700 shadow-xs';
+                            btnMode2D.className = 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold text-slate-600 hover:text-slate-900 transition';
+
+                            container2D.classList.add('hidden');
+                            container3D.classList.remove('hidden');
+
+                            initGlobe3D();
+                            if (globeInstance) {
+                                globeInstance.width(container3D.clientWidth);
+                                globeInstance.height(container3D.clientHeight);
+                            }
+                        });
+                    }
+
+                    window.addEventListener('resize', function () {
+                        if (globeInstance && !container3D.classList.contains('hidden')) {
+                            globeInstance.width(container3D.clientWidth);
+                            globeInstance.height(container3D.clientHeight);
+                        }
                     });
                 }
             });
