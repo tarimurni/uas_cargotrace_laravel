@@ -821,6 +821,13 @@
     @push('styles')
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
         <style>
+            /* Fix Leaflet tile distortion caused by Tailwind CSS preflight */
+            .leaflet-tile,
+            .leaflet-tile-pane img,
+            .leaflet-container img {
+                max-width: none !important;
+                max-height: none !important;
+            }
             .leaflet-control-layers {
                 border-radius: 0.6rem !important;
                 border: 1px solid rgba(226, 232, 240, 0.9) !important;
@@ -864,27 +871,37 @@
                 const map = L.map('shipmentMap', {
                     scrollWheelZoom: true,
                     zoomControl: true,
-                    maxZoom: 19
+                    maxZoom: 18
                 }).setView(defaultCenter, 6);
 
-                // Tile Layer 1: OpenStreetMap Standard (Layer utama gratis tanpa API key)
+                // Tile Layer 1: Esri World Street Map (Layer default tajam dan tidak memblokir localhost)
+                const esriStreetLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+                    maxZoom: 18,
+                    maxNativeZoom: 18,
+                    attribution: 'Tiles &copy; <a href="https://www.esri.com" target="_blank" rel="noopener">Esri</a>'
+                });
+
+                // Tile Layer 2: OpenStreetMap Standard
                 const osmLayer = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    maxZoom: 19,
+                    maxZoom: 18,
+                    maxNativeZoom: 18,
                     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors'
                 });
 
-                // Tile Layer 2: Esri World Imagery (Realistic satellite view)
+                // Tile Layer 3: Esri World Imagery (Satelit)
                 const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-                    maxZoom: 19,
-                    attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+                    maxZoom: 18,
+                    maxNativeZoom: 18,
+                    attribution: 'Tiles &copy; <a href="https://www.esri.com" target="_blank" rel="noopener">Esri</a> &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
                 });
 
-                // Default layer: OpenStreetMap
-                osmLayer.addTo(map);
+                // Default layer: Esri World Street Map
+                esriStreetLayer.addTo(map);
 
                 // Base layer switcher
                 const baseMaps = {
-                    "OpenStreetMap (Peta Jalan)": osmLayer,
+                    "Peta Jalan (Esri Street Map)": esriStreetLayer,
+                    "OpenStreetMap Standar": osmLayer,
                     "Citra Satelit (Esri World Imagery)": satelliteLayer
                 };
                 L.control.layers(baseMaps, null, { position: 'topright' }).addTo(map);
