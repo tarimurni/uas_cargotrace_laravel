@@ -46,6 +46,18 @@ class AuthFeatureTest extends TestCase
         $response->assertSessionHasErrors('email');
     }
 
+    public function test_root_route_redirects_guest_to_login(): void
+    {
+        $response = $this->get('/');
+        $response->assertRedirect(route('login'));
+    }
+
+    public function test_root_route_redirects_authenticated_user_to_dashboard(): void
+    {
+        $response = $this->actingAs($this->user)->get('/');
+        $response->assertRedirect(route('dashboard'));
+    }
+
     public function test_unauthenticated_user_accessing_protected_web_routes_is_redirected_to_login(): void
     {
         $protectedRoutes = [
