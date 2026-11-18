@@ -14,8 +14,11 @@ class ExceptionService
 {
     public function __construct(
         protected TrackingService $trackingService,
-        protected EtaService $etaService
-    ) {}
+        protected EtaService $etaService,
+        protected ?NotificationService $notificationService = null
+    ) {
+        $this->notificationService = $notificationService ?? new NotificationService();
+    }
 
     /**
      * Create a new exception for a shipment.
@@ -90,6 +93,9 @@ class ExceptionService
                 'ip_address' => request()?->ip() ?? '127.0.0.1',
                 'user_agent' => request()?->userAgent(),
             ]);
+
+            // Notify Customer about reported exception
+            $this->notificationService->notifyException($shipment, $exception);
 
             return $exception->fresh();
         });

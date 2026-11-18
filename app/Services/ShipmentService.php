@@ -12,11 +12,14 @@ use Illuminate\Support\Facades\DB;
 class ShipmentService
 {
     protected EtaService $etaService;
+    protected NotificationService $notificationService;
 
     public function __construct(
-        ?EtaService $etaService = null
+        ?EtaService $etaService = null,
+        ?NotificationService $notificationService = null
     ) {
         $this->etaService = $etaService ?? new EtaService();
+        $this->notificationService = $notificationService ?? new NotificationService();
     }
 
     public const STATUS_CREATED = 'CREATED';
@@ -140,6 +143,9 @@ class ShipmentService
                 'user_agent' => request()?->userAgent(),
             ]);
 
+            // In-App Notification to Customer
+            $this->notificationService->notifyStatusChange($shipment, $currentStatus, $targetStatus, $notes);
+
             return $shipment->fresh();
         });
     }
@@ -259,6 +265,16 @@ class ShipmentService
             ]);
 
             $this->etaService->evaluateAndApply($shipment, $user);
+
+            // In-App Notification if status changed
+            if (isset($data['current_status']) && ($oldValues['current_status'] ?? '') !== $data['current_status']) {
+                $this->notificationService->notifyStatusChange(
+                    $shipment,
+                    $oldValues['current_status'] ?? 'UNKNOWN',
+                    $data['current_status'],
+                    $data['notes'] ?? null
+                );
+            }
 
             return $shipment->fresh(['items', 'origin', 'destination', 'carrier', 'customer']);
         });

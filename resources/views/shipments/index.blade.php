@@ -16,43 +16,114 @@
     <div class="py-6">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
             <!-- Filter & Search Card -->
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                <form method="GET" action="{{ route('shipments.index') }}" class="grid grid-cols-1 md:grid-cols-5 gap-4">
-                    <div class="md:col-span-2">
-                        <label for="search" class="block text-sm font-medium text-gray-700">Pencarian</label>
-                        <input type="text" name="search" id="search" value="{{ request('search') }}" placeholder="Cari nomor shipment, jenis kargo, nama item..." class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 border border-gray-100">
+                <form method="GET" action="{{ route('shipments.index') }}" class="space-y-4">
+                    <!-- Row 1: Search, Status, Carrier -->
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div class="md:col-span-2">
+                            <label for="search" class="block text-xs font-semibold text-gray-700 uppercase">Pencarian Cepat</label>
+                            <div class="mt-1 relative rounded-md shadow-sm">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <svg class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                                </div>
+                                <input type="text" name="search" id="search" value="{{ request('search') }}" placeholder="Nomor shipment, jenis kargo, atau nama item..." class="pl-9 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-xs">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label for="current_status" class="block text-xs font-semibold text-gray-700 uppercase">Status Pengiriman</label>
+                            <select name="current_status" id="current_status" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-xs">
+                                <option value="">Semua Status</option>
+                                @foreach ($statuses as $val => $lbl)
+                                    <option value="{{ $val }}" {{ strtoupper(request('current_status')) === $val ? 'selected' : '' }}>{{ $lbl }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="carrier_id" class="block text-xs font-semibold text-gray-700 uppercase">Carrier (Armada)</label>
+                            <select name="carrier_id" id="carrier_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-xs">
+                                <option value="">Semua Carrier</option>
+                                @foreach ($carriers as $c)
+                                    <option value="{{ $c->id }}" {{ request('carrier_id') == $c->id ? 'selected' : '' }}>{{ $c->name }} ({{ $c->code }})</option>
+                                @endforeach
+                            </select>
+                        </div>
                     </div>
 
-                    <div>
-                        <label for="current_status" class="block text-sm font-medium text-gray-700">Status</label>
-                        <select name="current_status" id="current_status" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                            <option value="">Semua Status</option>
-                            <option value="pending" {{ request('current_status') === 'pending' ? 'selected' : '' }}>Pending</option>
-                            <option value="in_transit" {{ request('current_status') === 'in_transit' ? 'selected' : '' }}>In Transit</option>
-                            <option value="customs_clearance" {{ request('current_status') === 'customs_clearance' ? 'selected' : '' }}>Customs Clearance</option>
-                            <option value="delayed" {{ request('current_status') === 'delayed' ? 'selected' : '' }}>Delayed</option>
-                            <option value="delivered" {{ request('current_status') === 'delivered' ? 'selected' : '' }}>Delivered</option>
-                            <option value="cancelled" {{ request('current_status') === 'cancelled' ? 'selected' : '' }}>Cancelled</option>
-                        </select>
+                    <!-- Row 2: Origin, Destination, Date Range, Delay Status, Sorting -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-3 pt-3 border-t border-gray-100">
+                        <div>
+                            <label for="origin_id" class="block text-xs font-semibold text-gray-700 uppercase">Lokasi Asal</label>
+                            <select name="origin_id" id="origin_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-xs">
+                                <option value="">Semua Asal</option>
+                                @foreach ($locations as $loc)
+                                    <option value="{{ $loc->id }}" {{ request('origin_id') == $loc->id ? 'selected' : '' }}>{{ $loc->city }} - {{ $loc->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="destination_id" class="block text-xs font-semibold text-gray-700 uppercase">Lokasi Tujuan</label>
+                            <select name="destination_id" id="destination_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-xs">
+                                <option value="">Semua Tujuan</option>
+                                @foreach ($locations as $loc)
+                                    <option value="{{ $loc->id }}" {{ request('destination_id') == $loc->id ? 'selected' : '' }}>{{ $loc->city }} - {{ $loc->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="date_from" class="block text-xs font-semibold text-gray-700 uppercase">Berangkat Dari</label>
+                            <input type="date" name="date_from" id="date_from" value="{{ request('date_from') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-xs">
+                        </div>
+
+                        <div>
+                            <label for="date_to" class="block text-xs font-semibold text-gray-700 uppercase">Sampai Tanggal</label>
+                            <input type="date" name="date_to" id="date_to" value="{{ request('date_to') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-xs">
+                        </div>
+
+                        <div>
+                            <label for="is_delayed" class="block text-xs font-semibold text-gray-700 uppercase">Status Delay</label>
+                            <select name="is_delayed" id="is_delayed" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-xs">
+                                <option value="">Semua</option>
+                                <option value="1" {{ request('is_delayed') === '1' ? 'selected' : '' }}>Terlambat (Delayed)</option>
+                                <option value="0" {{ request('is_delayed') === '0' ? 'selected' : '' }}>Tepat Waktu (On Schedule)</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="sort_by" class="block text-xs font-semibold text-gray-700 uppercase">Urutkan</label>
+                            <div class="flex space-x-1 mt-1">
+                                <select name="sort_by" id="sort_by" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-xs">
+                                    <option value="created_at" {{ ($sortBy ?? '') === 'created_at' ? 'selected' : '' }}>Tgl Buat</option>
+                                    <option value="shipment_number" {{ ($sortBy ?? '') === 'shipment_number' ? 'selected' : '' }}>No. Shipment</option>
+                                    <option value="expected_departure" {{ ($sortBy ?? '') === 'expected_departure' ? 'selected' : '' }}>Tgl Berangkat</option>
+                                    <option value="expected_arrival" {{ ($sortBy ?? '') === 'expected_arrival' ? 'selected' : '' }}>Tgl Tiba</option>
+                                    <option value="weight" {{ ($sortBy ?? '') === 'weight' ? 'selected' : '' }}>Berat</option>
+                                    <option value="delay_hours" {{ ($sortBy ?? '') === 'delay_hours' ? 'selected' : '' }}>Jam Delay</option>
+                                </select>
+                                <select name="sort_direction" class="block rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-xs">
+                                    <option value="desc" {{ ($sortDirection ?? '') === 'desc' ? 'selected' : '' }}>&darr;</option>
+                                    <option value="asc" {{ ($sortDirection ?? '') === 'asc' ? 'selected' : '' }}>&uarr;</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
 
-                    <div>
-                        <label for="carrier_id" class="block text-sm font-medium text-gray-700">Carrier</label>
-                        <select name="carrier_id" id="carrier_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                            <option value="">Semua Carrier</option>
-                            @foreach ($carriers as $c)
-                                <option value="{{ $c->id }}" {{ request('carrier_id') == $c->id ? 'selected' : '' }}>{{ $c->name }} ({{ $c->code }})</option>
-                            @endforeach
-                        </select>
-                    </div>
+                    <div class="flex items-center justify-between pt-2">
+                        <span class="text-xs text-gray-500">
+                            Menampilkan <strong class="text-gray-900">{{ $shipments->total() }}</strong> pengiriman ditemukan
+                        </span>
 
-                    <div class="flex items-end space-x-2">
-                        <button type="submit" class="w-full inline-flex justify-center items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:outline-none sm:text-sm">
-                            Filter
-                        </button>
-                        <a href="{{ route('shipments.index') }}" class="inline-flex justify-center items-center px-4 py-2 bg-gray-200 border border-transparent rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-300 focus:outline-none sm:text-sm">
-                            Reset
-                        </a>
+                        <div class="flex items-center space-x-2">
+                            <a href="{{ route('shipments.index') }}" class="inline-flex items-center px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-md transition">
+                                Reset Filter
+                            </a>
+                            <button type="submit" class="inline-flex items-center px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-md shadow-xs transition">
+                                Terapkan Filter
+                            </button>
+                        </div>
                     </div>
                 </form>
             </div>

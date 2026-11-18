@@ -14,6 +14,14 @@ class EtaService
     public const SEVERITY_MEDIUM = 'MEDIUM';
     public const SEVERITY_HIGH = 'HIGH';
 
+    protected NotificationService $notificationService;
+
+    public function __construct(
+        ?NotificationService $notificationService = null
+    ) {
+        $this->notificationService = $notificationService ?? new NotificationService();
+    }
+
     /**
      * Get the delay threshold in hours from configuration.
      */
@@ -125,6 +133,15 @@ class EtaService
                 'ip_address' => request()?->ip() ?? '127.0.0.1',
                 'user_agent' => request()?->userAgent(),
             ]);
+
+            // Notify Customer if delay occurred
+            if ($newDelayed && ! $oldDelayed) {
+                $this->notificationService->notifyDelay(
+                    $shipment,
+                    $analysis['delay_hours'],
+                    $analysis['severity']
+                );
+            }
         }
 
         return $shipment->fresh();

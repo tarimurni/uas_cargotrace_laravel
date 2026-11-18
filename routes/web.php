@@ -4,6 +4,7 @@ use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\CarrierController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LocationController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ShipmentController;
 use App\Http\Controllers\ShipmentExceptionController;
@@ -31,6 +32,11 @@ Route::middleware(['auth'])->group(function () {
         ->name('shipments.exceptions.store');
     Route::put('/shipment-exceptions/{exception}', [ShipmentExceptionController::class, 'update'])
         ->name('shipment-exceptions.update');
+
+    // Notifications
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/{notification}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
 
     // Admin-only management
     Route::middleware('role:admin')->group(function () {

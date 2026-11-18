@@ -42,8 +42,9 @@ class ShipmentController extends Controller
             $query->where('customer_id', $request->input('customer_id'));
         }
 
+        // Search: shipment_number, cargo_type, or manifest items
         if ($request->filled('search')) {
-            $search = $request->input('search');
+            $search = trim($request->input('search'));
             $query->where(function ($q) use ($search) {
                 $q->where('shipment_number', 'like', "%{$search}%")
                   ->orWhere('cargo_type', 'like', "%{$search}%")
@@ -54,22 +55,73 @@ class ShipmentController extends Controller
             });
         }
 
+        // Filter: Status (case-insensitive)
         if ($request->filled('current_status')) {
-            $query->where('current_status', $request->input('current_status'));
+            $status = strtoupper(trim($request->input('current_status')));
+            $query->whereRaw('UPPER(current_status) = ?', [$status]);
         }
 
+        // Filter: Carrier
         if ($request->filled('carrier_id')) {
             $query->where('carrier_id', $request->input('carrier_id'));
         }
 
-        if ($request->filled('is_delayed')) {
-            $query->where('is_delayed', $request->boolean('is_delayed'));
+        // Filter: Origin Location
+        if ($request->filled('origin_id')) {
+            $query->where('origin_id', $request->input('origin_id'));
         }
 
-        $shipments = $query->latest()->paginate(10)->withQueryString();
-        $carriers = Carrier::where('is_active', true)->get();
+        // Filter: Destination Location
+        if ($request->filled('destination_id')) {
+            $query->where('destination_id', $request->input('destination_id'));
+        }
 
-        return view('shipments.index', compact('shipments', 'carriers'));
+        // Filter: Date Range (Expected Departure)
+        if ($request->filled('date_from')) {
+            $query->whereDate('expected_departure', '>=', $request->input('date_from'));
+        }
+        if ($request->filled('date_to')) {
+            $query->whereDate('expected_departure', '<=', $request->input('date_to'));
+        }
+
+        // Filter: Delay Status
+        if ($request->filled('is_delayed')) {
+            $delayedVal = $request->input('is_delayed');
+            if ($delayedVal === '1' || $delayedVal === 'true' || $delayedVal === 'delayed') {
+                $query->where('is_delayed', true);
+            } elseif ($delayedVal === '0' || $delayedVal === 'false' || $delayedVal === 'on_schedule') {
+                $query->where('is_delayed', false);
+            }
+        }
+
+        // Sorting
+        $allowedSorts = [
+            'created_at',
+            'shipment_number',
+            'expected_departure',
+            'expected_arrival',
+            'weight',
+            'delay_hours',
+            'current_status',
+        ];
+        $sortBy = in_array($request->input('sort_by'), $allowedSorts, true)
+            ? $request->input('sort_by')
+            : 'created_at';
+        $sortDirection = strtolower($request->input('sort_direction', 'desc')) === 'asc' ? 'asc' : 'desc';
+
+        $shipments = $query->orderBy($sortBy, $sortDirection)->paginate(10)->withQueryString();
+
+        $carriers = Carrier::where('is_active', true)->orderBy('name')->get();
+        $locations = Location::orderBy('name')->get();
+        $statuses = [
+            'CREATED' => 'Created',
+            'BOOKED' => 'Booked',
+            'PICKED_UP' => 'Picked Up',
+            'IN_TRANSIT' => 'In Transit',
+            'DELIVERED' => 'Delivered',
+        ];
+
+        return view('shipments.index', compact('shipments', 'carriers', 'locations', 'statuses', 'sortBy', 'sortDirection'));
     }
 
     /**
