@@ -76,6 +76,33 @@ class LocationSeeder extends Seeder
                 'latitude' => 51.9566000,
                 'longitude' => 4.1458000,
             ],
+            [
+                'name' => 'Port of Shanghai',
+                'code' => 'CNSHA',
+                'type' => 'seaport',
+                'city' => 'Shanghai',
+                'country' => 'China',
+                'latitude' => 31.2304000,
+                'longitude' => 121.4737000,
+            ],
+            [
+                'name' => 'Port of Los Angeles',
+                'code' => 'USLAX',
+                'type' => 'seaport',
+                'city' => 'Los Angeles',
+                'country' => 'United States',
+                'latitude' => 33.7432000,
+                'longitude' => -118.2673000,
+            ],
+            [
+                'name' => 'Port of Melbourne',
+                'code' => 'AUMEL',
+                'type' => 'seaport',
+                'city' => 'Melbourne',
+                'country' => 'Australia',
+                'latitude' => -37.8136000,
+                'longitude' => 144.9631000,
+            ],
         ];
 
         foreach ($locations as $location) {

@@ -38,6 +38,9 @@ class ShipmentSeeder extends Seeder
         $singapore = Location::where('code', 'SGSIN')->first();
         $tanjungPelepas = Location::where('code', 'MYTPP')->first();
         $rotterdam = Location::where('code', 'NLRTM')->first();
+        $shanghai = Location::where('code', 'CNSHA')->first();
+        $losAngeles = Location::where('code', 'USLAX')->first();
+        $melbourne = Location::where('code', 'AUMEL')->first();
 
         // Shipment 1: Delivered
         $s1 = Shipment::firstOrCreate(
@@ -72,6 +75,17 @@ class ShipmentSeeder extends Seeder
             ['location_id' => $singapore->id, 'status' => 'Arrived at Destination Port', 'event_time' => Carbon::parse('2026-11-14 12:00:00'), 'description' => 'Vessel berthed at PSA Singapore Port.', 'created_by' => $operator?->id],
             ['location_id' => $singapore->id, 'status' => 'Delivered', 'event_time' => Carbon::parse('2026-11-14 17:15:00'), 'description' => 'Cargo successfully cleared customs and received by consignee.', 'created_by' => $operator?->id],
         ]);
+        $s1->exceptions()->create([
+            'exception_type' => 'DOCUMENTATION_ISSUE',
+            'severity' => 'low',
+            'status' => 'RESOLVED',
+            'description' => 'Commercial invoice tariff code (HS Code) clarification requested by Singapore customs.',
+            'detected_at' => Carbon::parse('2026-11-13 10:00:00'),
+            'occurred_at' => Carbon::parse('2026-11-13 10:00:00'),
+            'is_resolved' => true,
+            'resolved_at' => Carbon::parse('2026-11-13 18:00:00'),
+            'resolution_notes' => 'Revised HS Code 8542.31 submitted and accepted by TradeNet.',
+        ]);
 
         // Shipment 2: Delayed (Sea freight Surabaya -> Jakarta)
         $s2 = Shipment::firstOrCreate(
@@ -104,9 +118,11 @@ class ShipmentSeeder extends Seeder
             ['location_id' => $tanjungPriok->id, 'status' => 'Delayed in Transit', 'event_time' => Carbon::parse('2026-11-17 10:00:00'), 'description' => 'Berthing slot re-allocated due to Tanjung Priok harbor congestion.', 'created_by' => $operator?->id],
         ]);
         $s2->exceptions()->create([
-            'exception_type' => 'Port Congestion',
+            'exception_type' => 'PORT_CONGESTION',
             'severity' => 'medium',
+            'status' => 'INVESTIGATING',
             'description' => 'Berth queue delay at Tanjung Priok Terminal 2 due to bad weather and high vessel backlog.',
+            'detected_at' => Carbon::parse('2026-11-17 09:30:00'),
             'occurred_at' => Carbon::parse('2026-11-17 09:30:00'),
             'is_resolved' => false,
         ]);
@@ -142,7 +158,7 @@ class ShipmentSeeder extends Seeder
             ['location_id' => $singapore->id, 'status' => 'Delivered', 'event_time' => Carbon::parse('2026-11-16 13:45:00'), 'description' => 'Direct hand-over to Singapore Changi Medical Cargo Hub.', 'created_by' => $operator?->id],
         ]);
 
-        // Shipment 4: In Transit (International Sea Freight Jakarta -> Rotterdam)
+        // Shipment 4: In Transit (Route 1: Southeast Asia -> Europe, Jakarta -> Rotterdam)
         $s4 = Shipment::firstOrCreate(
             ['shipment_number' => 'CT-2026-004'],
             [
@@ -155,12 +171,12 @@ class ShipmentSeeder extends Seeder
                 'volume' => 42.50,
                 'expected_departure' => Carbon::parse('2026-11-12 14:00:00'),
                 'expected_arrival' => Carbon::parse('2026-12-05 08:00:00'),
-                'estimated_arrival' => Carbon::parse('2026-12-05 08:00:00'),
+                'estimated_arrival' => Carbon::parse('2026-12-06 02:00:00'),
                 'actual_departure' => Carbon::parse('2026-11-12 16:30:00'),
                 'current_status' => 'in_transit',
-                'is_delayed' => false,
-                'delay_hours' => 0,
-                'notes' => 'Export consignment in 40ft ventilated dry container.',
+                'is_delayed' => true,
+                'delay_hours' => 18,
+                'notes' => 'Export consignment in 40ft ventilated dry container. Weather delay reported.',
             ]
         );
         $s4->items()->createMany([
@@ -171,6 +187,16 @@ class ShipmentSeeder extends Seeder
             ['location_id' => $tanjungPriok->id, 'status' => 'Customs Cleared', 'event_time' => Carbon::parse('2026-11-11 11:00:00'), 'description' => 'Export customs PEB approved.', 'created_by' => $operator?->id],
             ['location_id' => $tanjungPriok->id, 'status' => 'Departed Port', 'event_time' => Carbon::parse('2026-11-12 16:30:00'), 'description' => 'Departed on MV Maersk Mc-Kinney Moller.', 'created_by' => $operator?->id],
             ['location_id' => $singapore->id, 'status' => 'Transshipment Hub Arrival', 'event_time' => Carbon::parse('2026-11-15 14:00:00'), 'description' => 'Transferred for deep-sea westbound voyage.', 'created_by' => $operator?->id],
+            ['location_id' => $rotterdam->id, 'status' => 'Weather Delay Reported', 'event_time' => Carbon::parse('2026-11-16 08:00:00'), 'description' => 'Severe swell and gale force winds in Bay of Biscay causing transit speed reduction.', 'created_by' => $operator?->id],
+        ]);
+        $s4->exceptions()->create([
+            'exception_type' => 'WEATHER_DELAY',
+            'severity' => 'medium',
+            'status' => 'INVESTIGATING',
+            'description' => 'Severe swell and gale force winds in Bay of Biscay causing transit speed reduction of approx 18 hours.',
+            'detected_at' => Carbon::parse('2026-11-16 08:00:00'),
+            'occurred_at' => Carbon::parse('2026-11-16 08:00:00'),
+            'is_resolved' => false,
         ]);
 
         // Shipment 5: In Transit (Medan -> Johor / Tanjung Pelepas)
@@ -259,11 +285,97 @@ class ShipmentSeeder extends Seeder
             ['location_id' => $tanjungPriok->id, 'status' => 'Customs Hold', 'event_time' => Carbon::parse('2026-11-17 11:30:00'), 'description' => 'Red line notification: physical verification required.', 'created_by' => $operator?->id],
         ]);
         $s7->exceptions()->create([
-            'exception_type' => 'Customs Hold',
+            'exception_type' => 'CUSTOMS_HOLD',
             'severity' => 'high',
+            'status' => 'OPEN',
             'description' => 'Customs authority requested physical inspection and SNI certificate matching.',
+            'detected_at' => Carbon::parse('2026-11-17 11:30:00'),
             'occurred_at' => Carbon::parse('2026-11-17 11:30:00'),
             'is_resolved' => false,
+        ]);
+
+        // Shipment 8: Route 2: Asia -> North America (Shanghai -> Los Angeles)
+        $s8 = Shipment::firstOrCreate(
+            ['shipment_number' => 'CT-2026-008'],
+            [
+                'customer_id' => $customer->id,
+                'carrier_id' => $maersk->id,
+                'origin_id' => $shanghai->id,
+                'destination_id' => $losAngeles->id,
+                'cargo_type' => 'Consumer Electronics & Smart Displays',
+                'weight' => 22400.00,
+                'volume' => 52.00,
+                'expected_departure' => Carbon::parse('2026-11-10 12:00:00'),
+                'expected_arrival' => Carbon::parse('2026-11-24 18:00:00'),
+                'estimated_arrival' => Carbon::parse('2026-11-26 02:00:00'),
+                'actual_departure' => Carbon::parse('2026-11-10 14:00:00'),
+                'current_status' => 'delayed',
+                'is_delayed' => true,
+                'delay_hours' => 32,
+                'notes' => 'Trans-Pacific eastbound container consignment. CBP inspection hold active at LAX.',
+            ]
+        );
+        $s8->items()->createMany([
+            ['item_name' => 'Ultra HD 4K Smart Monitors 32-inch', 'item_code' => 'DISP-4K-32', 'quantity' => 400, 'weight' => 12000.00, 'volume' => 28.00, 'declared_value' => 110000.00],
+            ['item_name' => 'Wireless Rapid Charging Consoles', 'item_code' => 'CHG-WRL-99', 'quantity' => 650, 'weight' => 10400.00, 'volume' => 24.00, 'declared_value' => 78000.00],
+        ]);
+        $s8->trackingEvents()->createMany([
+            ['location_id' => $shanghai->id, 'status' => 'Loaded on Vessel', 'event_time' => Carbon::parse('2026-11-10 11:00:00'), 'description' => 'Container loaded at Shanghai Port Yangshan Deep Water Terminal.', 'created_by' => $operator?->id],
+            ['location_id' => $shanghai->id, 'status' => 'Departed Port', 'event_time' => Carbon::parse('2026-11-10 14:00:00'), 'description' => 'Vessel departed Shanghai en route across North Pacific corridor.', 'created_by' => $operator?->id],
+            ['location_id' => $losAngeles->id, 'status' => 'Arrived at Destination Port', 'event_time' => Carbon::parse('2026-11-24 12:00:00'), 'description' => 'Vessel berthed at Port of Los Angeles Pier 400.', 'created_by' => $operator?->id],
+            ['location_id' => $losAngeles->id, 'status' => 'Customs Hold', 'event_time' => Carbon::parse('2026-11-24 15:30:00'), 'description' => 'US CBP random intensive examination hold issued.', 'created_by' => $operator?->id],
+        ]);
+        $s8->exceptions()->create([
+            'exception_type' => 'CUSTOMS_HOLD',
+            'severity' => 'high',
+            'status' => 'OPEN',
+            'description' => 'US Customs and Border Protection (CBP) random intensive examination hold at LAX container yard.',
+            'detected_at' => Carbon::parse('2026-11-24 15:30:00'),
+            'occurred_at' => Carbon::parse('2026-11-24 15:30:00'),
+            'is_resolved' => false,
+        ]);
+
+        // Shipment 9: Route 3: Southeast Asia -> Australia (Surabaya -> Melbourne)
+        $s9 = Shipment::firstOrCreate(
+            ['shipment_number' => 'CT-2026-009'],
+            [
+                'customer_id' => $customer->id,
+                'carrier_id' => $samudera->id,
+                'origin_id' => $tanjungPerak->id,
+                'destination_id' => $melbourne->id,
+                'cargo_type' => 'Specialty Teak Furniture & Wooden Artifacts',
+                'weight' => 14800.00,
+                'volume' => 36.00,
+                'expected_departure' => Carbon::parse('2026-11-08 06:00:00'),
+                'expected_arrival' => Carbon::parse('2026-11-20 12:00:00'),
+                'estimated_arrival' => Carbon::parse('2026-11-20 12:00:00'),
+                'actual_departure' => Carbon::parse('2026-11-08 07:30:00'),
+                'current_status' => 'in_transit',
+                'is_delayed' => false,
+                'delay_hours' => 0,
+                'notes' => 'Export consignment of certified legal wood furniture to Australia.',
+            ]
+        );
+        $s9->items()->createMany([
+            ['item_name' => 'Solid Teak Outdoor Dining Sets', 'item_code' => 'TEAK-DNG-08', 'quantity' => 120, 'weight' => 8400.00, 'volume' => 21.00, 'declared_value' => 52000.00],
+            ['item_name' => 'Handcrafted Javanese Wood Sculptures', 'item_code' => 'WOOD-SCU-21', 'quantity' => 150, 'weight' => 6400.00, 'volume' => 15.00, 'declared_value' => 39000.00],
+        ]);
+        $s9->trackingEvents()->createMany([
+            ['location_id' => $tanjungPerak->id, 'status' => 'Departed Port', 'event_time' => Carbon::parse('2026-11-08 07:30:00'), 'description' => 'Vessel departed Tanjung Perak, Surabaya for Melbourne.', 'created_by' => $operator?->id],
+            ['location_id' => $tanjungPerak->id, 'status' => 'Documentation Issue Flagged', 'event_time' => Carbon::parse('2026-11-12 09:00:00'), 'description' => 'DAFF quarantine system requested fumigation certificate batch correction.', 'created_by' => $operator?->id],
+            ['location_id' => $tanjungPerak->id, 'status' => 'Documentation Resolved', 'event_time' => Carbon::parse('2026-11-12 23:30:00'), 'description' => 'Amended treatment certification verified and clearance approved by DAFF.', 'created_by' => $operator?->id],
+            ['location_id' => $melbourne->id, 'status' => 'In Transit', 'event_time' => Carbon::parse('2026-11-16 12:00:00'), 'description' => 'Vessel cruising southern Indian Ocean waters approaching Bass Strait.', 'created_by' => $operator?->id],
+        ]);
+        $s9->exceptions()->create([
+            'exception_type' => 'DOCUMENTATION_ISSUE',
+            'severity' => 'medium',
+            'status' => 'RESOLVED',
+            'description' => 'Australian Department of Agriculture (DAFF) biosecurity treatment certificate amendment required.',
+            'detected_at' => Carbon::parse('2026-11-12 09:00:00'),
+            'occurred_at' => Carbon::parse('2026-11-12 09:00:00'),
+            'is_resolved' => true,
+            'resolved_at' => Carbon::parse('2026-11-12 23:30:00'),
+            'resolution_notes' => 'Fumigation and heat treatment certificates re-issued with valid batch numbers and approved by DAFF biosecurity clearance.',
         ]);
 
         // Demo Notifications

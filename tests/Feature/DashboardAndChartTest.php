@@ -117,16 +117,24 @@ class DashboardAndChartTest extends TestCase
         $response->assertViewHas('delayRate');
         $response->assertViewHas('exceptionRate');
 
+        // Assert 3 additional KPIs (Slide 23 Brief Metrics)
+        $response->assertViewHas('onTimeDeliveryRate');
+        $response->assertViewHas('avgDelayDuration');
+        $response->assertViewHas('avgExceptionResolutionTime');
+
         // Assert Chart.js data is passed
         $response->assertViewHas('statusChartLabels');
         $response->assertViewHas('statusChartValues');
         $response->assertViewHas('carrierChartLabels');
         $response->assertViewHas('carrierChartValues');
 
-        // Assert canvas elements for Chart.js are in HTML
+        // Assert canvas elements and KPI cards are in HTML
         $response->assertSee('id="statusChart"', false);
         $response->assertSee('id="carrierChart"', false);
         $response->assertSee('cdn.jsdelivr.net/npm/chart.js', false);
+        $response->assertSee('On-Time Delivery Rate');
+        $response->assertSee('Average Delay Duration');
+        $response->assertSee('Average Exception Resolution Time');
     }
 
     public function test_dashboard_is_scoped_for_customer(): void

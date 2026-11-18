@@ -87,6 +87,60 @@
                 </div>
             </div>
 
+            <!-- Operational Quality KPIs (Slide 23 Brief Metrics) -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- KPI 1: On-Time Delivery Rate (%) -->
+                <div class="bg-gradient-to-br from-emerald-600 to-teal-700 rounded-xl p-5 text-white shadow-md relative overflow-hidden border border-emerald-500/20">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <span class="inline-block px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-white/20 rounded text-emerald-100">Keandalan Logistik</span>
+                            <p class="text-xs uppercase font-bold tracking-wider text-emerald-100 mt-2">On-Time Delivery Rate</p>
+                            <p class="text-3xl font-extrabold font-mono mt-1">{{ $onTimeDeliveryRate }}%</p>
+                            <p class="text-xs text-emerald-100/90 mt-1">Persentase pengiriman tiba sesuai target jadwal</p>
+                        </div>
+                        <div class="p-3 bg-white/20 backdrop-blur-sm rounded-xl">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- KPI 2: Average Delay Duration (jam) -->
+                <div class="bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl p-5 text-white shadow-md relative overflow-hidden border border-amber-500/20">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <span class="inline-block px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-white/20 rounded text-amber-100">Efisiensi Rute</span>
+                            <p class="text-xs uppercase font-bold tracking-wider text-amber-100 mt-2">Average Delay Duration</p>
+                            <p class="text-3xl font-extrabold font-mono mt-1">{{ $avgDelayDuration }} <span class="text-lg font-normal">jam</span></p>
+                            <p class="text-xs text-amber-100/90 mt-1">Rata-rata durasi deviasi keterlambatan kargo bermasalah</p>
+                        </div>
+                        <div class="p-3 bg-white/20 backdrop-blur-sm rounded-xl">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- KPI 3: Average Exception Resolution Time (jam) -->
+                <div class="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-xl p-5 text-white shadow-md relative overflow-hidden border border-indigo-500/20">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <span class="inline-block px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-white/20 rounded text-indigo-100">Response & Handling</span>
+                            <p class="text-xs uppercase font-bold tracking-wider text-indigo-100 mt-2">Average Exception Resolution Time</p>
+                            <p class="text-3xl font-extrabold font-mono mt-1">{{ $avgExceptionResolutionTime }} <span class="text-lg font-normal">jam</span></p>
+                            <p class="text-xs text-indigo-100/90 mt-1">Rata-rata kecepatan penyelesaian insiden operasional</p>
+                        </div>
+                        <div class="p-3 bg-white/20 backdrop-blur-sm rounded-xl">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Chart.js Visualizations (Shipment by Status & by Carrier) -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <!-- Chart 1: Shipment by Status (Doughnut Chart) -->

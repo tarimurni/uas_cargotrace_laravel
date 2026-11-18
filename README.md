@@ -33,10 +33,12 @@ CargoTrace addresses these challenges through:
 
 ## 🚀 Key Features
 
-- **Operational Dynamic Dashboard**:
+- **Operational Dynamic Dashboard & Executive KPIs**:
   - Aggregated real-time metrics directly from MySQL (Total Shipments, In Transit, Delivered, Delayed, Open Exceptions).
+  - Executive Operational KPIs: **On-Time Delivery Rate (%)**, **Average Delay Duration (hours)**, and **Average Exception Resolution Time (hours)**.
   - Delay Rate (%) and Exception Rate (%) KPIs.
   - Interactive **Chart.js** data visualizations: *Shipment by Status* (Doughnut) and *Shipment by Carrier* (Bar).
+  - Multi-corridor route scenarios: **Southeast Asia &rarr; Europe**, **Asia &rarr; North America**, and **Southeast Asia &rarr; Australia**.
   - Role-scoped metrics (global for Admin/Operator, private for Customer).
 - **Shipment Management with Advanced Multi-Filter**:
   - Live search across shipment numbers, cargo types, and manifest item descriptions.

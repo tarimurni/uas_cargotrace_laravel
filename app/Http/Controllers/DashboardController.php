@@ -7,6 +7,7 @@ use App\Models\Location;
 use App\Models\Notification;
 use App\Models\Shipment;
 use App\Models\ShipmentException;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -51,6 +52,51 @@ class DashboardController extends Controller
         // Calculated Rates
         $delayRate = $totalShipments > 0 ? round(($delayedCount / $totalShipments) * 100, 1) : 0;
         $exceptionRate = $totalShipments > 0 ? round(($totalExceptionsCount / $totalShipments) * 100, 1) : 0;
+
+        // KPI 1: On-Time Delivery Rate (%)
+        $onTimeDeliveredCount = (clone $shipmentQuery)
+            ->whereRaw('UPPER(current_status) = ?', ['DELIVERED'])
+            ->where('is_delayed', false)
+            ->count();
+
+        if ($deliveredCount > 0) {
+            $onTimeDeliveryRate = round(($onTimeDeliveredCount / $deliveredCount) * 100, 1);
+        } elseif ($totalShipments > 0) {
+            $onTimeDeliveryRate = round((($totalShipments - $delayedCount) / $totalShipments) * 100, 1);
+        } else {
+            $onTimeDeliveryRate = 100.0;
+        }
+
+        // KPI 2: Average Delay Duration (jam)
+        $avgDelayHours = (clone $shipmentQuery)
+            ->where('is_delayed', true)
+            ->where('delay_hours', '>', 0)
+            ->avg('delay_hours');
+        $avgDelayDuration = $avgDelayHours !== null ? round((float) $avgDelayHours, 1) : 0.0;
+
+        // KPI 3: Average Exception Resolution Time (jam)
+        $resolvedExceptions = (clone $exceptionQuery)
+            ->where(function ($q) {
+                $q->where('status', ShipmentException::STATUS_RESOLVED)
+                  ->orWhere('is_resolved', true);
+            })
+            ->whereNotNull('resolved_at')
+            ->get();
+
+        if ($resolvedExceptions->isNotEmpty()) {
+            $totalResolutionHours = $resolvedExceptions->sum(function ($ex) {
+                $start = $ex->detected_at ?? $ex->occurred_at ?? $ex->created_at;
+                $end = $ex->resolved_at;
+                if ($start && $end) {
+                    $minutes = abs(Carbon::parse($start)->diffInMinutes(Carbon::parse($end)));
+                    return max(0.1, round($minutes / 60, 2));
+                }
+                return 0.0;
+            });
+            $avgExceptionResolutionTime = round($totalResolutionHours / $resolvedExceptions->count(), 1);
+        } else {
+            $avgExceptionResolutionTime = 0.0;
+        }
 
         // Chart.js Data: Shipments by Status
         $canonicalStatuses = [
@@ -117,6 +163,9 @@ class DashboardController extends Controller
             'totalExceptionsCount',
             'delayRate',
             'exceptionRate',
+            'onTimeDeliveryRate',
+            'avgDelayDuration',
+            'avgExceptionResolutionTime',
             'statusChartLabels',
             'statusChartValues',
             'carrierChartLabels',
